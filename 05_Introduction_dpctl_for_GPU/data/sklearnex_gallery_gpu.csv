@@ -1,0 +1,107 @@
+﻿Acronym,Name,What is it used for,Advantages,Disadvantages
+dbscan,Density-based spatial clustering of applications with noise (DBSCAN) is a data clustering algorithm,"Density-based spatial clustering of applications with noise (DBSCAN) is a data clustering algorithm. given a set of points in some space, it groups together points that are closely packed together (points with many nearby neighbors), marking as outliers points that lie alone in low-density regions (whose nearest neighbors are too far away). DBSCAN is one of the most common clustering algorithms and also most cited in scientific literature.","does not require one to specify the number of clusters in the data a priori. Can find arbitrarily-shaped clusters such as the famous cinimmon roll pattern. It can even find a cluster completely surrounded by (but not connected to) a different cluster.
+can find arbitrarily-shaped clusters. It can even find a cluster completely surrounded by (but not connected to) a different cluster, lilke the famous cinimmon roll dataset.
+has a notion of noise, and is robust to outliers.
+requires just two parameters and is mostly insensitive to the ordering of the points in the database.","scklearnex must only use ‘euclidean’ or ‘minkowski’ with p != 2.
+Generally:
+not entirely deterministic: border points that are reachable from more than one cluster can be part of either cluster
+quality depends on the distance measure used in the function regionQuery(P,ε)
+cannot cluster data sets well with large differences in densities, since the minPts-ε combination cannot then be chosen appropriately for all cluster
+choosing a meaningful distance threshold ε can be difficult"
+kmeans,K-Means clustering.,"KMeans algorithm clusters data by trying to separate samples in n groups of equal variance, minimizing a criterion known as the inertia or within-cluster sum-of-squares. This algorithm requires the number of clusters to be specified. It scales well to large number of samples and has been used across a large range of application areas in many different fields.","Relatively simple to implement. Scales to large data sets. Guarantees convergence. Can warm-start the positions of centroids. Easily adapts to new examples. Generalizes to clusters of different shapes and sizes, such as elliptical clusters.","intel sklearnex: All parameters except precompute_distances and sample_weight != None
+
+Choosing k manually. Workaround is to use interia method or the “Loss vs. Clusters” plot to find the optimal (k), as discussed in Interpret Results. Being dependent on initial values. For a low k, you can mitigate this dependence by running k-means several times with different initial values and picking the best result. As k increases, you need advanced versions of k-means to pick better values of the initial centroids (called k-means seeding). For a full discussion of k- means seeding. k-means has trouble clustering data where clusters are of varying sizes and density. Centroids can be dragged by outliers, or outliers might get their own cluster instead of being ignored. Consider removing or clipping outliers before clustering. Scaling with number of dimensions. As the number of dimensions increases, a distance-based similarity measure converges to a constant value between any given examples. Reduce dimensionality either by using PCA on the feature data, or by using “spectral clustering” to modify the clustering algorithm as explained below."
+kneighborsclassifier,K Nearest Neighbors Classifier  ,Classifier: Find the K-neighbors of a point. Returns indices of and distances to the neighbors of each point.,"K-NN is pretty intuitive and simple: 
+K-NN algorithm is very simple to understand and equally easy to implement. To classify the new data point K-NN algorithm reads through whole dataset to find out K nearest neighbors.    
+K-NN has no assumptions: 
+K-NN is a non-parametric algorithm which means there are assumptions to be met to implement K-NN. 
+Parametric models like linear regression has lots of assumptions to be met by data before it can be implemented which is not the case with K-NN.    
+No Training Step: K-NN does not explicitly build any model, it simply tags the new data entry based learning from historical data. New data entry would be tagged with majority class in the nearest neighbor.    
+It constantly evolves: Given it’s an instance-based learning; k-NN is a memory-based approach. 
+The classifier immediately adapts as we collect new training data. 
+It allows the algorithm to respond quickly to changes in the input during real-time use.    
+Very easy to implement for multi-class problem: Most of the classifier algorithms are easy to implement for binary problems and needs effort to implement for multi class whereas K-NN adjust to multi class without any extra efforts.    
+Can be used both for Classification and Regression: One of the biggest advantages of K-NN is that K-NN can be used both for classification and regression problems.    
+One Hyper Parameter: K-NN might take some time while selecting the first hyper parameter but after that rest of the parameters are aligned to it.    Variety of distance criteria to be choose from: K-NN algorithm gives user the flexibility to choose distance while building K-NN model.
+        Euclidean Distance
+        Hamming Distance
+        Manhattan Distance
+        Minkowski Distance","Intel sklearex:  All parameters except algorithm != ‘brute’, weights = ‘callable’. Only dense data is supported.
+Geneally:
+K-NN slow algorithm: K-NN might be very easy to implement but as dataset grows efficiency or speed of algorithm declines very fast.    
+Curse of Dimensionality: KNN works well with small number of input variables but as the numbers of variables grow K-NN algorithm struggles to predict the output of new data point.    
+K-NN needs homogeneous features: If you decide to build k-NN using a common distance, like Euclidean or Manhattan distances, it is completely necessary that features have the same scale, since absolute differences in features weight the same, i.e., a given distance in feature 1 must means the same for feature 2.    
+Optimal number of neighbors: One of the biggest issues with K-NN is to choose the optimal number of neighbors to be consider while classifying the new data entry.   
+Imbalanced data causes problems: k-NN doesn’t perform well on imbalanced data. If we consider two classes, A and B, and the majority of the training data is labeled as A, then the model will ultimately give a lot of preference to A. This might result in getting the less common class B wrongly classified.    
+Outlier sensitivity: K-NN algorithm is very sensitive to outliers as it simply chose the neighbors based on distance criteria.    
+Missing Value treatment: K-NN inherently has no capability of dealing with missing value problem.
+"
+kneighborsregressor,K Nearest Neighbors Regressor  ,Regressor: Find the K-neighbors of a point. Returns indices of and distances to the neighbors of each point.,"K-NN is pretty intuitive and simple: 
+K-NN algorithm is very simple to understand and equally easy to implement. To classify the new data point K-NN algorithm reads through whole dataset to find out K nearest neighbors.    
+K-NN has no assumptions: 
+K-NN is a non-parametric algorithm which means there are assumptions to be met to implement K-NN. 
+Parametric models like linear regression has lots of assumptions to be met by data before it can be implemented which is not the case with K-NN.    
+No Training Step: K-NN does not explicitly build any model, it simply tags the new data entry based learning from historical data. New data entry would be tagged with majority class in the nearest neighbor.    
+It constantly evolves: Given it’s an instance-based learning; k-NN is a memory-based approach. 
+The classifier immediately adapts as we collect new training data. 
+It allows the algorithm to respond quickly to changes in the input during real-time use.    
+Very easy to implement for multi-class problem: Most of the classifier algorithms are easy to implement for binary problems and needs effort to implement for multi class whereas K-NN adjust to multi class without any extra efforts.    
+Can be used both for Classification and Regression: One of the biggest advantages of K-NN is that K-NN can be used both for classification and regression problems.    
+One Hyper Parameter: K-NN might take some time while selecting the first hyper parameter but after that rest of the parameters are aligned to it.    Variety of distance criteria to be choose from: K-NN algorithm gives user the flexibility to choose distance while building K-NN model.
+        Euclidean Distance
+        Hamming Distance
+        Manhattan Distance
+        Minkowski Distance","Intel sklearex:  All parameters except algorithm != ‘brute’, weights = ‘callable’. Only dense data is supported.
+Geneally:
+K-NN slow algorithm: K-NN might be very easy to implement but as dataset grows efficiency or speed of algorithm declines very fast.    
+Curse of Dimensionality: KNN works well with small number of input variables but as the numbers of variables grow K-NN algorithm struggles to predict the output of new data point.    
+K-NN needs homogeneous features: If you decide to build k-NN using a common distance, like Euclidean or Manhattan distances, it is completely necessary that features have the same scale, since absolute differences in features weight the same, i.e., a given distance in feature 1 must means the same for feature 2.    
+Optimal number of neighbors: One of the biggest issues with K-NN is to choose the optimal number of neighbors to be consider while classifying the new data entry.   
+Imbalanced data causes problems: k-NN doesn’t perform well on imbalanced data. If we consider two classes, A and B, and the majority of the training data is labeled as A, then the model will ultimately give a lot of preference to A. This might result in getting the less common class B wrongly classified.    
+Outlier sensitivity: K-NN algorithm is very sensitive to outliers as it simply chose the neighbors based on distance criteria.    
+Missing Value treatment: K-NN inherently has no capability of dealing with missing value problem.
+"
+linear,Linear Regression,Fitting line of best fit through data,"Simple method  
+Good interpretation 
+Easy to implement
+Can fit multi dimensionsal data too","Intel sklearnex: All parameters except normalize != False and sample_weight != None
+Only dense data is supported, #observations should be >= #features.
+Generally:
+Assumes linear relationship between dependent and independent variables, which is incorrect in most cases    
+Sensitive to outliers    
+If the number of observations are less, it leads to over fitting, it starts considering noise."
+logistic,Logistic Regression,"Classifier: Generally used for quick binary classification where you want to identify two classes such as ""Cat"" versus ""Dog"". But it can be extended for multi-class classification as well","Doesn’t assume linear relationship between independent and dependent variables.
+Dependent variables does not need to be normally distributed.     
+No homogeneity of variance assumption required.    
+Effective interpretation of results.","Intel sklearnex: All parameters  solver must NOT be ‘newton-cg’, class_weight  must be 0,  sample_weight must be None, penalty must be ‘L2’. Only dense data is supported.
+Generally:
+Requires more data to achieve stability. 
+Effective mostly on linearly separable."
+pca,Principal Component Analysis (PCA),"Dimensionality reduction. Pre processto reduce dimensions (columns) for kmeans. Think jpeg lossy compression versus raw image as an analogy to lossy data size reduction (columns) for tabular - also though images can use it too. Finds the long axis the corresponds to the most variance of the data, then finds the orthogonal next best axis to experess the next most variances, and so on","PCA can help us improve performance at a very low cost of model accuracy. Other benefits of PCA include reduction of noise in the data, feature selection (to a certain extent), and the ability to produce independent, uncorrelated features of the data.","intel sklearnex: All parameters  svd_solver MUST be ‘full’. Sparse data is not supported.
+Generally:
+PCA tries to place dissimilar data points far apart in a lower dimension representation. But in order to represent high dimension data on low dimension, non-linear manifold, it is important that similar datapoints must be represented close together, which is not what PCA does. This is done efficiently by t-SNE. So, it can efficiently capture the structure of trickier manifolds in the dataset"
+random_forest_classifier,Random Forest Classifier,Classifier: A random forest produces good predictions that can be understood easily. It can handle large datasets efficiently. The random forest algorithm provides a higher level of accuracy in predicting outcomes over the decision tree algorithm.,"One third of data is not used for training, hence it can be used for testing.     
+High performance and accurate     
+Provides feature importance estimate    
+Can automatically handle missing values     
+No feature scaling is required","SKLEARNEX: warm_start must be False,cpp_alpha must be 0, criterion must be ‘gini’, oob_score = False. Multi-output, sparse data, out-of-bag score and sample_weight are not supported.   
+GENERALLY: Less interpret-ability, black box approach    
+Can over fit the data.    
+Requires more computational resources    
+Prediction time is high"
+random_forest_regressor,Random Forest Regressor,Regressor: A random forest produces good predictions that can be understood easily. It can handle large datasets efficiently. The random forest algorithm provides a higher level of accuracy in predicting outcomes over the decision tree algorithm.,"One third of data is not used for training, hence it can be used for testing.     
+High performance and accurate     
+Provides feature importance estimate    
+Can automatically handle missing values     
+No feature scaling is required","SKLEARNEX: warm_start must be False,cpp_alpha must be 0, criterion must be ‘mse’, oob_score = False. Multi-output, sparse data, out-of-bag score and sample_weight are not supported.   
+GENERALLY: 
+Less interpret-ability, black box approach    
+Can over fit the data.    
+Requires more computational resources    
+Prediction time is high"
+svc,Support Vector Classifier,"Classification: requires X & y.  It is based on SVM. Advantages: works relatively well when there is a clear margin of separation between classes, more effective in high dimensional spaces where the number of columns is greater than the number of rows, relatively memory efficient. Disadvantages: not suitable for large data sets with millions of rows, not good for  noisy dataset nor when target classes are overlapping.","1. Regularization capabilities: SVM has L2 Regularization feature. So, it has good generalization capabilities which prevent it from over-fitting.   
+2. Handles non-linear data efficiently: SVM can efficiently handle non-linear data using Kernel trick.   
+3. Solves both Classification and Regression problems: SVM can be used to solve both classification and regression problems. SVM is used for classification problems while SVR (Support Vector Regression) is used for regression problems.   4. Stability: A small change to the data does not greatly affect the hyperplane and hence the SVM. So the SVM model is stable.","SKLEARNEX: Only binary dense data is supported. All parameters except kernel = ‘sigmoid_poly’, also Must class_weight = None. GENERALLY: 1. Choosing an appropriate Kernel function is difficult: Choosing an appropriate Kernel function (to handle the non-linear data) is not an easy task. It could be tricky and complex. In case of using a high dimension Kernel, you might generate too many support vectors which reduce the training speed drastically.    
+2. Extensive memory requirement: Algorithmic complexity and memory requirements of SVM are very high. You need a lot of memory since you have to store all the support vectors in the memory and this number grows abruptly with the training dataset size.    
+3. Requires Feature Scaling: One must do feature scaling of variables before applying SVM.    
+4. Long training time: SVM takes a long training time on large datasets.   5. Difficult to interpret: SVM model is difficult to understand and interpret by human beings unlike Decision Trees."
