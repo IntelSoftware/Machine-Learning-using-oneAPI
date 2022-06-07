@@ -31,8 +31,8 @@ Third party program Licenses can be found here: [third-party-programs.txt](https
 
 ## Syllabus
 
-- 11 Modules (18 hours)
-- 11 Lab Exercises
+- 8 Modules (8 hours)
+- 15 Lab Exercises
 
 -----------------------
 | Folder | Modules | Description | Duration |
