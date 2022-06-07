@@ -40,10 +40,10 @@ else:
 
 if gpu_available:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
 else:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(cpu_device))
 
 clustering_host = DBSCAN(eps=3, min_samples=2).fit(x_device)
 

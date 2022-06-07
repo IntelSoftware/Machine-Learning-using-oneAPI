@@ -1,0 +1,145 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Module 05_03: Gallery of Functions on GPU
+# 
+# ### Learning Objectives:
+# 
+# By the end of this lession you will be able to:
+# 
+# - Apply the patch functions with varying granularities.
+# - Leverage the Compute Follows Data methodology using Intel DPCTL library to target Intel GPU
+# - In this moduel you will learn **HOW** on an Intel GPU
+# - For the current hardware configurationson the Intel DevCloud - we are **NOT focusing on performance**
+# 
+
+# **Not all Scikit-learn functions are available yet on Intel GPU**. These are the [currently optimized functions optimized with Intel(R) Extensions for scikit learn](https://intel.github.io/scikit-learn-intelex/algorithms.html). **Pay specific attenstion to the GPU section** Different algorithms have been optimized for Intel CPU and Intel GPU. This allows a develoeprs to check which functions are currently optimized. Some functions are simply aliases to others in that list, to see the 23 optimized "unique" functions - open the data/sklearnex_gallery.csv or run the follow cell.
+# 
+# **Pandas Gallery of Functions Explorer**
+# Below you can interact with a Pandas Dataframe containing more information obout the algorithms optimized using Intel Extensions for scikit-learn*
+
+# In[ ]:
+
+
+import pandas as pd
+sklearnex_gallery_gpu = pd.read_csv('data/sklearnex_gallery_gpu.csv')
+sklearnex_gallery_gpu
+
+
+# Below you can filter the dataframe to see details about sklearnex library (aka Intel Extensions to scikit-learn*)
+# 
+# - familiarize yourself with a handful of algorithms, explore details aboput 'What is it used for', 'Advantages', 'Disadvantages'
+#  
+
+# In[ ]:
+
+
+def print_gallery_details(acroynm, column):
+    print(sklearnex_gallery_gpu[sklearnex_gallery_gpu['Acronym'] == acroynm][column].tolist()[0])
+
+details = ['What is it used for', 'Advantages', 'Disadvantages']
+print_gallery_details('kneighborsclassifier', 'Advantages')
+
+
+# Import the get_patch_names, get_patch_map from sklearnex and familiarize yourself with the functions available and more detials about where they reise on your system
+
+# # Regarding when/how to cast to and from dpctl.tensors
+# 
+# This information bears repeating: to make sure the concept is clear.
+# 
+# Study the code sectons near the conversion to and from dptcl/Numpy
+# 
+# For all sklearnex alogorithms - it will be necessary to cast the X and/or y data passed as the parameter list to dpctl tensor in order for the GPU to access the data and performan the computation.
+# 
+# Examples:
+# - **x_device** = dpctl.tensor.from_numpy(**x**, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+# - **y_device** = dpctl.tensor.from_numpy(**y**, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+# 
+# 
+# 
+# Pay attention ot **return** types from:
+# - **fit** - many cases in scikit-learn, fit returns selfobject
+# - **fit_predict** - returns **ndarray** requires casting after the call on host (to_numpy)
+# - **predict** -  returns **ndarray** requires casting after the call on host (to_numpy)
+# - **fit_transform** - returns returns **ndarray** requires casting after the call on host (to_numpy)
+# - **tranform** - typically returns **ndarray** requires casting after the call on host (to_numpy)
+# 
+# Scikit-learn routines that potentially return ndarray type objects or which expect ndtype objects passed as a parameter will need to be cast to/from numpy from/to dpctl.tensor
+# 
+# To cast data being fed TO one of these routines:
+# - use dpctl.tensor.from_numpy() to conver from NumPy to dpctl tensor
+# - use dpctl.tensor.to_numpy() to convert from dpctl tensor to NumPy
+# 
+# Example: After a call to fit_predict:
+# - **catch_device** = estimator.fit_predict(**x_device**, **y_device**)
+# - **predictedHost** = dpctl.tensor.to_numpy(**catch_device**)
+# 
+
+# # Test Harness
+# 
+# Below we create a test harness to test specific comparisons of algorith/parameter choice with specific synthetic data generation choices
+# 
+# For measurements, we made a function, "gallery",  in which data for each allgorithm is generated, an estiamtor for the algorithms is creaed, the the aggregated training and prediction times are computed.
+# 
+# We define a gallery function that will pair one algorithms with a synthesized dataset, to give you a sense of how fast these allgorithms can be when applied to some datasets - Not all datasets will have the same speedups but these are likley typical for the size, shape, and complexity of the generated data
+# 
+
+# # The Gallery Function
+# 
+# The below, tests which slearn functions are supported by the given GPU/ version of Intel Extensions for Scikit-learn. Despiste the documentaion on DevCLoud only a handful of algorithms aare supported
+# 
+# Keep these pass fail results in mind as you compete the practicums, as you should not blindly submit all algorithms to the GPU
+# 
+# ## EXERCISE:
+# 
+# - follow the inserted comments to insert of modify code in the next few cells
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('writefile', 'lab/gallery_gpu.py', 'from tqdm import tqdm\n\n############################# Import dpctl ######################\n\n##################################################################\n\ndef gallery(cases):\n    elapsed_fit = {}  # dictionary to track the time elapsed for the fit method\n    elapsed_predict = {}  # dictionary to track the time elapsed for the predict/transform method \n    # the parmeters for this algorithms and for generating the data will be in the next cell\n    for name, case in tqdm(cases.items()):\n        print("\\nname: ", name)\n        algorithm = case[\'algorithm\']\n        try:\n            estimator = algorithm[\'estimator\'](**algorithm[\'params\'])\n            data = case[\'data\']\n            x, y = data[\'generator\'](**data[\'params\'])\n            x.astype(float)\n            y.astype(float)\n            ###################  Add code to get_devices, get_devices, select_gpu_device  ########\n\n            ######################################################################################\n\n            \n            \n            ############### Add code to convert x & y to dpctl.tensors x_device, y_device #########\n\n            \n            ######################################################################################\n\n            \n            \n            if hasattr(estimator, \'fit_predict\'):\n                ###################### Modify code to fit  x_device, y_device ####################\n                estimator.fit(x, y)\n                ##################################################################################\n                \n                print("fit_predict section", name," fit")\n                \n                ###################### Modify code to predict  x_device, y_device ####################\n                catch_device = estimator.fit_predict(x, y)\n                ######################################################################################\n                \n                print("fit_predict section", name," fit_predict")   \n                \n                #######################################################################################\n                ##### Since we will use the prediction to score accuracy metrics, we need to cast it ##\n\n                #######################################################################################\n                \n                # print("fit_predict section dpctl.tensor.to_numpy", name)\n                ########use the correct version of the two lines below (comment one out) ##########\n                ####  print(predictedHost) \n                print(catch_device)\n                ###################################################################################\n                \n            elif hasattr(estimator, \'predict\'):\n                estimator.fit(x, y)\n                print("predict section", name, " fit")\n                catch_device = estimator.predict(x)\n                print("predict section", name, " predict")\n                \n                ################# Add cast to move returned result to ddpctl.tensor, \n                ################# put result in varibale named predicted ###########\n                ################# then print(predicted)\n\n                ###############################################################################\n                \n                print(catch_device)\n                \n                             \n        except Exception as e:\n            print(\'A problem has occurred from the Problematic code:\\n\', e)\n            print("Not Supported as Configured\\n\\n")\n        \n\ndef get_cases():\n    return {\n    \'Logistic Regression\': {\n        "algorithm": {\n            \'estimator\': sklearn.linear_model.LogisticRegression,\n            \'params\': {\n                \'random_state\': 43,\n                \'max_iter\': 300,\n                \'penalty\': \'l2\'\n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_classification,\n            \'params\':\n            {\n                \'n_samples\': 10000,\n                \'n_features\': 40,\n                \'n_classes\': 3,\n                \'n_informative\': 5,\n                \'random_state\': 43,\n            }\n        }\n    },\n    \'KNN Classifier\': {\n        "algorithm": {\n            \'estimator\': sklearn.neighbors.KNeighborsClassifier,\n            \'params\': {\n                \'n_jobs\': -1,\n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_classification,\n            \'params\':\n            {\n                \'n_samples\': 3500,\n                \'n_features\': 30,\n                \'n_classes\': 3,\n                \'n_informative\': 3,\n                \'random_state\': 43,\n            }\n        }\n    },\n    \'KNN Regression\': {\n        "algorithm": {\n            \'estimator\': sklearn.neighbors.KNeighborsRegressor,\n            \'params\': {\n                \'n_neighbors\': 10,\n                \'n_jobs\': -1,\n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_regression,\n            \'params\':\n            {\n                \'n_samples\': 3500,\n                \'n_features\': 30,\n                \'n_targets\': 1,\n                \'random_state\': 43,\n            }\n        }\n    },\n    \'Linear Regression\': {\n        "algorithm": {\n            \'estimator\': sklearn.linear_model.LinearRegression,\n            \'params\': {\n                \'n_jobs\': -1,\n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_regression,\n            \'params\':\n            {\n                \'n_samples\': 3000,\n                \'n_features\': 100,\n                \'n_targets\': 1,  \n                \'random_state\': 43,\n            }\n        }\n    },     \n    \'dbscan\': {\n            "algorithm": {\n            \'estimator\': sklearn.cluster.DBSCAN,\n            \'params\': {\n                \'eps\': 10,\n                \'min_samples\' :2\n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_blobs,\n            \'params\':\n            {\n                \'n_samples\': 3000,  \n                \'n_features\': 30,\n                \'centers\': 8,\n                \'random_state\': 43,\n            }\n        }\n    },\n    \'k_means_random\': {\n            "algorithm": {\n            \'estimator\': sklearn.cluster.KMeans,\n            \'params\': {\n                \'n_clusters\': 3,\n                \'random_state\' :0, \n                \'init\' : \'random\',                \n            }\n        },\n        "data": {\n            \'generator\': sklearn.datasets.make_blobs,\n            \'params\':\n            {\n                \'n_samples\': 3000,  \n                \'n_features\': 30,\n                \'centers\': 8,\n                \'random_state\': 43,\n            }\n        }\n    },          \n}\nfrom sklearn import metrics\nfrom sklearnex import patch_sklearn\npatch_sklearn()  # this will set parameters such that the stock version of sklearn will be called\nimport sklearn.svm, sklearn.datasets, sklearn.neighbors, sklearn.linear_model, sklearn.decomposition\ncases = get_cases()  #case the algorithm/dataset pairs\ngallery(cases)  # call the bench function to captures the elapsed time dictionaries\nprint(\'All Tests Good\\n\')')
+
+
+# #### Build and Run
+# Select the cell below and click run ▶ to compile and execute the code:
+
+# In[ ]:
+
+
+get_ipython().system(' chmod 755 q; chmod 755 run_gallery_gpu.sh; if [ -x "$(command -v qsub)" ]; then ./q run_gallery_gpu.sh; else ./run_gallery_gpu.sh; fi')
+
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('writefile', 'lab/TestPCAonGPU.py', "from sklearnex import patch_sklearn\npatch_sklearn()\nfrom sklearn.decomposition import PCA\nimport numpy as np\n\n############################# Import dpctl ######################\n\n##################################################################\n\n\nx = np.array([[1,1,1],[2,-1,3],[3,2,1]])\n\n            ###################  Add code to get_devices, get_devices, select_gpu_device  ########\n\n            ######################################################################################\n\n            \n            \n            ############### Add code to convert x to dpctl.tensor x_device #########\n\n            \n            ######################################################################################\n\n\npca = PCA(2)  # 2 Principal components please\n\n################# Convert x to dpctl.tensor accessing gpu ########\n#  x_device = __________\n##################################################################\n\n# repalce x with x_device #######################################\nest = pca.fit(x)\ntrans = pca.transform(x)  # replace trans with equivalent trans_x on device\n# trans_x = pca.transform(x)\n################# Convert trans_x on GPU from dpctl.tensor to trans_host ########\n# trans_host =  ______________\n##################################################################\n\nprint('components_ ', pca.components_)\nprint('explained_variance_ ',pca.explained_variance_)\n\n#### Choose the one that works, depending on your device!\n# print('transformed x ',trans)\n# print('transformed x ',trans_host)\nprint('PCA All Good\\n')")
+
+
+# In[ ]:
+
+
+get_ipython().system(' chmod 755 q; chmod 755 run_pca_gpu.sh; if [ -x "$(command -v qsub)" ]; then ./q run_pca_gpu.sh; else ./run_pca_gpu.sh; fi')
+
+
+# # Conclusions
+# Only a handful of sklearn algorithms are currently optimized in oneAPI for Intel GPU. It is important to keep your libraries upto date to get the latest versions with themost supported functionality!
+# 
+# As you convert each practicum keep this in mind
+# 
+# **Exercise:** Take a moment to enumerate the algorithms that you found to be enabled
+
+# # Notices & Disclaimers 
+# 
+# Intel technologies may require enabled hardware, software or service activation.
+# No product or component can be absolutely secure.
+# 
+# Your costs and results may vary.
+# 
+# © Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. 
+# *Other names and brands may be claimed as the property of others.
+
+# In[ ]:
+
+
+print("All Done")
+

@@ -17,13 +17,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.datasets import fetch_openml
 import pandas as pd
 
-############################3 import dpctl #################################
-import dpctl
+############################# import dpctl #################################
+
 ############################################################################
 
+
+
+
 #########  apply patch here  prior to import of desired scikit-learn #######
-from sklearnex import patch_sklearn
-patch_sklearn()
+
 ############################################################################
 
 
@@ -79,13 +81,13 @@ params = {
     'n_neighbors': 40,  
     'weights': 'distance'
 }
-print('dataset shape: ', x_train_device.shape)
+print('dataset shape: ', x_train.shape)
 
 from sklearn.neighbors import KNeighborsClassifier
-knn = KNeighborsClassifier(**params).fit(x_train_device, y_train_device)
+knn = KNeighborsClassifier(**params).fit(x_train, y_train)
 
-predictedGPU = knn.predict(x_test_device) #Predict on GPU
-#predictedCPU = knn.predict(x_test) #Predict on CPU
+#predictedGPU = knn.predict(x_test_device) #Predict on GPU
+predictedCPU = knn.predict(x_test) #Predict on CPU
     
 ################## add code to cast returned results to Numpy to dpctl_tensors ################  
 # only need to do this for predict. fit_predict, transform, fit_transform IF I need to use results

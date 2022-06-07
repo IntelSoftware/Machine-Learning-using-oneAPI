@@ -1,0 +1,392 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Module 03 Practicum:  ImageClustering using PCA, Kmeans, DBSCAN
+# 
+# In this module you will be generating this graph, and describing that it means in terms os sanity checking your clusters, and what it means in terms of feature dimensions
+# 
+# ![Assets/dbscan_graph.png](Assets/dbscan_graph.png)
+
+# 
+# ## Learning Objectives
+# 
+# * Explore and interpret the image dataset
+# 
+# * Apply Intel® Extension for Scikit-learn* patches to Principal Components Analysis (PCA), Kmeans,and DBSCAN algorithms
+# * **Synthesize** your understanding- searching for ways to patch or unpatch any applicable cells to maximize the performance of each cell
+# 
+# # Practicum:
+# 
+# - Analyze each cell looking for places to patch or unpatch as needed to maximize the performace of each cell.
+# - Apply a patching strategy that applies the patch to every algorithm optimized by patching.
+# 
+# 
+# 
+# <a id='Back_to_Sections'></a>
+# 
+# ## Sections
+# 
+# - _Code:_ [Read Images](#Define-image-manipulation-and-Reading-functions)
+# - _Code:_ [Submit batch_clustering_Streamlined.py as a batch job](#Submit-batch_clustering_Streamlined.py-as-a-batch-job)
+# - _Code:_ [Plot Kmeans using GPU results](#Plot-Kmeans)
+# - _Code:_ [Plot DBSCAN using GPU results](#Plot-DBSCAN)
+# 
+# # Dependencies required:
+# 
+# - pip install pillow
+# - pip install seaborn
+# 
+# # Data Description
+# 
+# This data represent wildlife images taken by the author of thisnotebook. It is an UNBALANCED set of images of Collared Lizards, Pelicans, and Seascapes. The images are shot in various white balances to make clustering a challenge.  Additionally, the data are imbalalanced so that some lizrds were photographed in bright light, and some in shade. The goal is to perform clustering to aid eventual clsasification for use in a CNN semi-supervised learning exercise
+# 
+# The iamges are read in from a folder, and one by one that are reshaped to a single row with perhaps 60,000 columns (one image now per row). After they are assembled into a NumPy array there are scaled to zero mean, unit standard deviation to aid the Prinicpal Component step to have somewhat similar scale ranges.
+# 
+# The image array is tranaformed via PCA with 2 to 6 principal components shich changes the shape of the data we feed to kmeans or DBSCAn to n x c where c is the number of principal components we desire (likely in range from 2 to 6)
+# 
+# Then the data is plotted in a Seaborn pairplot to allow us to spot clusters visually, by which ever combo of principal components.
+# 
+# We use KMeans or DBSCAN to help automaticllay select which images belong to which cluster as reppresented by the color of the dots.
+# 
+# We also display an image grid of the clustered images to see if simialr images are clustered together to meet with our intuition.
+# 
+
+# In[ ]:
+
+
+from __future__ import print_function
+data_path = ['data']
+
+# Notebook time start
+from datetime import datetime
+
+start_time = datetime.now()
+
+current_time = start_time.strftime("%H:%M:%S")
+print("Current Time =", current_time)
+
+
+# # Define image manipulation and Reading functions
+# 
+# You do not have to patch code inside the lab.Read_Transform_Images script
+
+# In[ ]:
+
+
+from sklearnex import patch_sklearn, unpatch_sklearn
+patch_sklearn()
+from lab.Read_Transform_Images import *
+
+
+# <a id='Actually-read-the-images'></a>
+# # Actually read the images
+# 
+# - [Back to Sections](#Back_to_Sections)
+
+# In[ ]:
+
+
+resultsDict = {}
+#resultsDict = Read_Transform_Images(resultsDict,imagesFilenameList = imagesFilenameList)
+resultsDict = Read_Transform_Images(resultsDict,path = '../03_Applied_to_Image_Clustering_CPU/data/')
+#resultsDict.keys()
+
+
+# # Display ImageGrid Random Sampling
+# 
+# This should give an idea of how closely or differently the various images appear. Notice that some of the collard lizard images have much differnet white balance and this will affect the clustering. For this dataset the images are clustered based on the similarity in RGB colorspace only.
+# 
+# You should notice several similar images of:
+# - Dark white balance lizards
+# - Light white balance lizards
+# - Skyscape with pelicans
+# - Seascapes with surf
+# 
+# Ccan an algorithm we design find clustering values in rough agreement to the above?
+
+# In[ ]:
+
+
+img_arr = []
+ncols = 8
+imageGrid=(ncols,3)
+for pil in random.sample(resultsDict['list_PIL_Images'], imageGrid[0]*imageGrid[1])  :
+    img_arr.append(np.array(pil))
+#displayImageGrid(img_arr, imageGrid=imageGrid)
+displayImageGrid2(img_arr, ncols=ncols)
+
+
+# ## Create a Cell in the Style of a main() Python Script
+# 
+# This is a preperatory step for a later  when we qsub code to another compute node that has a GPU resiing in it
+# 
+# In this case we run the code on a CPU, so we can become familiar with the results for comparison to later GPU results
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('time', '', '# %load batch_clustering_Streamlined.py\n# batch_clustering_Streamlined.py\n\n#===============================================================================\n# Copyright 2014-2022 Intel Corporation\n#\n# Licensed under the Apache License, Version 2.0 (the "License");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an "AS IS" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.\n#===============================================================================\n\nimport matplotlib.pyplot as plt\nimport numpy as np\nimport glob\nfrom PIL import Image\nfrom PIL.Image import Image as PilImage\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.cluster import KMeans\nfrom sklearn.decomposition import PCA\nfrom sklearn.cluster import DBSCAN\nimport pandas as pd\nimport random\nimport operator\nimport seaborn as sns\n\nfrom lab.Read_Transform_Images import ReshapeShortFat\nfrom lab.Read_Transform_Images import Read_Transform_Images\nfrom lab.Read_Transform_Images import displayImageGrid\nfrom lab.Read_Transform_Images import NumpyEncoder\n\n\ndef main():\n    #from sklearn.decomposition import PCA\n\n    resultsDict = {}\n    #resultsDict = Read_Transform_Images(resultsDict)\n    resultsDict = Read_Transform_Images(resultsDict,path = \'../03_Applied_to_Image_Clustering_CPU/data/\')\n    \n    knee = 6\n    EPS = 220\n    n_components = 3\n    n_samples = 3\n    NP_images_STD = resultsDict[\'NP_images_STD\'] # images as numpy array\n\n    del resultsDict\n    pca = PCA(n_components=n_components)\n    data = NP_images_STD\n    PCA_fit_transform = pca.fit_transform(data) \n    print(PCA_fit_transform[:3,:])\n    k_means = KMeans(n_clusters = knee, init=\'random\')\n    db = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform)\n    km = k_means.fit(PCA_fit_transform)     \n        \n    print(\'db.labels_ \', db.labels_)\n    print(\'km.labels_ \',km.labels_)\n    \n    PCA_table = pd.DataFrame(PCA_fit_transform) \n    PCA_table.to_csv(\'data/PCA_fit_transform.csv\', index=False )\n    db_table = pd.DataFrame(db.labels_) \n    db_table.to_csv(\'data/db_labels.csv\', index=False )    \n    km_table = pd.DataFrame(km.labels_) \n    km_table.to_csv(\'data/km_labels.csv\', index=False )\n    counts_db, bins_db = np.histogram(db.labels_, bins = knee)\n    counts_db_table = pd.DataFrame(counts_db)\n    counts_db_table.to_csv(\'data/counts_db.csv\', index=False ) \n    bins_db_table = pd.DataFrame(bins_db)\n    bins_db_table.to_csv(\'data/bins_db.csv\', index=False ) \n    \n    counts_km, bins_km =np.histogram(k_means.labels_, bins = knee)\n    counts_km_table = pd.DataFrame(counts_km)\n    counts_km_table.to_csv(\'data/counts_km.csv\', index=False ) \n    bins_km_table = pd.DataFrame(bins_km)\n    bins_km_table.to_csv(\'data/bins_km.csv\', index=False ) \n    \n    print("All good inside main\\n")\n    \n    return \n\nif __name__ == "__main__":\n    main()\n    #print("km_list: ", resultsDict[\'km_list\'][0:2])\n    print(\'All looks good!\\nRun 03_Plot_GPU_Results.ipynb to graph the results!\')\n\n# Notices & Disclaimers \n\n# Intel technologies may require enabled hardware, software or service activation.\n# No product or component can be absolutely secure.\n\n# Your costs and results may vary.\n\n# © Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. \n# *Other names and brands may be claimed as the property of others.')
+
+
+# Unpatched
+# - CPU times: user 16 s, sys: 1.08 s, total: 17.1 s
+# - Wall time: 1.73 s
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('time', '', "path = '../03_Applied_to_Image_Clustering_CPU/data/'\nresultsDict = {}\nresultsDict = Read_Transform_Images(resultsDict, path=path)\n\nknee = 6\nEPS = 230\nn_components = 3\nn_samples = 3\n    \npca = PCA(n_components=n_components)\ndata = resultsDict['NP_images_STD']\nPCA_fit_transform = pca.fit_transform(data) \nk_means = KMeans(n_clusters = knee, init='random')\ndb = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform)\nkm = k_means.fit(PCA_fit_transform) ")
+
+
+# Unpatched
+#  - CPU times: user 17.7 s, sys: 996 ms, total: 18.7 s
+# - Wall time: 1.69 s
+
+# <a id='Plot-Kmeans'></a>
+# # Plot Kmeans Clusters 
+# 
+# Plot a histogram of the using GPU results
+# -  [Back to Sections](#Back_to_Sections)
+
+# In[ ]:
+
+
+#resultsDict = Compute_kmeans_db_histogram_labels(resultsDict, knee = 6, gpu_available = gpu_available) #knee = 5
+counts = np.asarray(pd.read_csv('data/counts_km.csv'))
+bins = np.asarray(pd.read_csv('data/bins_km.csv'))
+#counts = np.asarray(resultsDict['counts'])
+#bins = np.asarray(resultsDict['bins'])
+plt.xlabel("Weight")
+plt.ylabel("Probability")
+plt.title("Histogram with Probability Plot: Context {}".format('device_context'))
+slice = min(counts.shape[0], bins.shape[0])
+plt.bar(bins[:slice,0],counts[:slice,0])
+plt.grid()
+plt.show()
+
+
+# # Display Similar Images
+# 
+# Visually compare image which have been clustered by the allgorithm.
+# 
+# You may be surpirsed at the cluster grouping - what kmeans finds simialr or dissimilar based only on RGB colors
+
+# In[ ]:
+
+
+clusterRank = 0
+km_labels = np.asarray(pd.read_csv('data/km_labels.csv'))
+d = {i:cts for i, cts in enumerate(np.asarray(pd.read_csv('data/counts_km.csv')))}
+sorted_d = sorted(d.items(), key=operator.itemgetter(1), reverse=True)
+
+id = sorted_d[clusterRank][0] 
+indexCluster = np.where(km_labels == id  )[0].tolist()
+img_arr = []
+for idx in indexCluster:
+    img_arr.append(np.array((resultsDict['list_PIL_Images'][idx])))
+img_arr = np.asarray(img_arr)
+displayImageGrid(img_arr)
+
+
+# In[ ]:
+
+
+sorted_d
+
+
+# # Plot Seaborn Kmeans Clusters
+# 
+# Indicates numbers of images that are close in color space
+
+# In[ ]:
+
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+n_components = 3
+
+PCA_table = pd.read_csv('data/PCA_fit_transform.csv')
+columns = ['PC{:0d}'.format(c) for c in range(n_components)]
+data = pd.DataFrame(np.asarray(PCA_table)[:,:n_components], columns = columns)
+#k_means = resultsDict['model']
+data['cluster'] = km_labels
+data.head()
+
+columns.append('cluster')
+plt.figure(figsize=(8,8))
+
+sns.set_context('notebook');
+g = sns.pairplot(data[columns], hue="cluster", palette="Paired", diag_kws=dict(hue=None));
+g.fig.suptitle("KMEANS pairplot: Context {}".format('device_context'));
+
+
+# # Find DBSCAN EPS parameter
+# 
+# **We need to know roughly the size of EPS to try** 
+# 
+# Density-Based Spatial Clustering of Applications with Noise (DBSCAN) finds core samples of high density and expands clusters from them. Good for data which contains clusters of similar density.
+# 
+# EPS: "epsilon" value in sklearn is the maximum distance between two samples for one to be considered as in the neighborhood of the other.
+# 
+# At least a first value to start. We are using kNN to find distances commonly occuring in the dataset. Values of EPS below this threshold distance will be considered as lyig within a given cluster. This means we should look for long flat plateaus and read the y coordinate off the kNN plot to get a starting value for EPS.
+# 
+# Different datasets can have wildly different sweet spots for EPS. Some datasets require EPS values of .001 other datasets may work best with values of EPS of several thousand. We use this trick to get in the right or approximate neighborhood of the EPS.
+# 
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('time', '', "from sklearn.neighbors import NearestNeighbors\n\nPCA_images = data\n\nneighbors = NearestNeighbors(n_neighbors=2)\n#X = StandardScaler().fit_transform(PCA_images)\nneighbors_fit = neighbors.fit(PCA_images)\ndistances, indices = neighbors_fit.kneighbors(PCA_images)\n\ndistances = np.sort(distances, axis=0)\nplt.xlabel('number of images')\nplt.ylabel('distances')\nplt.title('Nearest Neighbor Distances Plot')\nplt.plot(distances[:,1])\nplt.grid()")
+
+
+# Unpatched
+# 
+# - CPU times: user 17.2 ms, sys: 85 µs, total: 17.2 ms
+# - Wall time: 13.8 ms
+
+# # Use DBSCAN to find clusters
+# 
+# Use initial estiamtes from KNN above (find elbow) to given initial trial for DBSCAN EPS values 
+# 
+# In the plot above, there is a plateau in the y values somewherre near 350 indicating that a cluster distance (aka EPS) might work well somewhere near this value. We used this value in the batch_clustering_Streamlined.py file when computing DBSCAN.
+# 
+# **EPS:** Two points are  neighbors if the distance between the two points is below a threshold.
+# **n:** The minimum number of neighbors a given point should have in order to be classified as a core point. 
+# The point itself is included in the minimum number of samples.
+# 
+# # Below: Find EPS That Minimizes Outliers
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('time', '', "\npca = PCA(n_components=n_components)\ndata = resultsDict['NP_images_STD']\nPCA_fit_transform = pca.fit_transform(data) \nn_samples = 2 # we'll say that you have to have at least 2 points in a set to call it a cluster\n\nR = [i for i in range(20,460, 5)] # Range of EPS values to try\nv = np.zeros([len(R), 2]) # empty array\nidx = 0\nplotData = np.zeros([len(R),2])\nfor eps in  R:\n    db = DBSCAN(eps = eps, min_samples = n_samples).fit(PCA_fit_transform)\n    counts = np.unique(db.labels_ , return_counts=True)\n    plotData[idx,0] = eps\n    plotData[idx,1] = counts[1][0]\n    idx += 1\nplt.plot(plotData[:,0], plotData[:,1])\nplt.grid()")
+
+
+# Unpatched
+# 
+# - CPU times: user 12.4 s, sys: 629 ms, total: 13 s
+# - Wall time: 1.18 s
+
+# In[ ]:
+
+
+get_ipython().run_cell_magic('time', '', "#%%write_and_run    lab/compute_DBSCANClusterRank.py \ndef compute_DBSCANClusterRank(n_samples = 3, n_components = 3, EPS = 230 ):\n    pca = PCA(n_components=n_components)\n    data = resultsDict['NP_images_STD']\n    PCA_fit_transform = pca.fit_transform(data) \n    db = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform)\n\n    counts = np.unique(db.labels_ , return_counts=True)\n    d = {k:v for k, v in sorted(zip(counts[0], counts[1]), reverse=True, key=operator.itemgetter(1))}\n    sorted_d = {k:v for k, v in sorted(zip(counts[0], counts[1]), reverse=True, key=operator.itemgetter(1))}\n    return db, counts, sorted_d, PCA_fit_transform\ndata\nn_components = 3\ncolumns = ['PC{}'.format(i) for i in range(n_components)]\nEPS = 230\ndb, counts, sorted_d, PCA_fit_transform = compute_DBSCANClusterRank(n_samples = 3, n_components = n_components, EPS = EPS)\nPCAdf = pd.DataFrame(PCA_fit_transform, columns = columns)\nPCAdf['cluster'] = db.labels_\nprint(sorted_d)")
+
+
+# Unpatched
+# 
+# - CPU times: user 11.5 s, sys: 680 ms, total: 12.2 s
+# - Wall time: 1.09 s
+# 
+# 
+
+# In[ ]:
+
+
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+sns.set_context('notebook');
+g = sns.pairplot(PCAdf, hue="cluster", palette="Paired", diag_kws=dict(hue=None));
+g.fig.suptitle("DBSCAN pairplot: Context {}".format('device_context'));
+
+
+# # Print Filenames of Outliers
+
+# In[ ]:
+
+
+print('Outlier/problematic images are: \n', 
+      [resultsDict['imagesFilenameList'][f].split('/')[-1] for f in list(PCAdf[PCAdf['cluster'] == -1].index)]
+     )
+
+
+# <a id='Plot-DBSCAN'></a>
+# # DBSCAN Cluster Plots
+# 
+# Plot a histogram of the using GPU results
+# - [Back to Sections](#Back_to_Sections)
+# 
+#  
+# 
+# To indicate numbers of images in each cluster. color each point by its membership in a cluster
+# 
+# **Why read the counts and bins for DB from the csv from earlier?**
+# 
+# We will read the values from those saved earlier into a couple of csv files. THis is so later, when we modify for use with GPU on another node in the cluster, we can plot the results from that node.
+
+# In[ ]:
+
+
+#resultsDict = Compute_kmeans_db_histogram_labels(resultsDict, knee = 6, gpu_available = gpu_available) #knee = 5
+counts = np.asarray(pd.read_csv('data/counts_db.csv'))
+bins = np.asarray(pd.read_csv('data/bins_db.csv'))
+#counts = np.asarray(resultsDict['counts'])
+#bins = np.asarray(resultsDict['bins'])
+plt.xlabel("Weight")
+plt.ylabel("Probability")
+plt.title("Histogram with Probability Plot: Context {}".format('device_context'))
+slice = min(counts.shape[0], bins.shape[0])
+plt.bar(bins[:slice,0],counts[:slice,0])
+plt.grid()
+plt.show()
+
+
+# ### We sort the dictionary containing the idx and counts of each cluster
+# 
+# We call the most frequently encoutered cluster, ClusterRank 0.  The next most frequently encoutered cluster,, is ClusterRank1, etc
+# 
+# Once we know the most common clusters, we can arrange the photos in a grid so we can see iamge clusters ot get a visual sense of similarity
+
+# In[ ]:
+
+
+clusterRank = 2
+db_labels = np.asarray(pd.read_csv('data/db_labels.csv'))
+d = {i:cts for i, cts in enumerate(np.asarray(pd.read_csv('data/counts_db.csv')))}
+sorted_d = sorted(d.items(), key=operator.itemgetter(1), reverse=True)
+
+id = sorted_d[clusterRank][0] - 1
+indexCluster = np.where(db_labels == id  )[0].tolist()
+img_arr = []
+for idx in indexCluster:
+    img_arr.append(np.array((resultsDict['list_PIL_Images'][idx])))
+img_arr = np.asarray(img_arr)
+displayImageGrid(img_arr)
+print('id: ',id)
+
+
+# ## Notes:
+# 
+# Did you notice any differences in timing between patched versus unpatched?
+# 
+# If you exerpereinced marginal or no performance improvements, What do you think explains your observation?
+# 
+# 
+# # Final Thoughts and next steps...
+# 
+# You may have noticed how difficult it is to get decent clustering on even 30 or 40 images using only RGB or HSV as the feature set
+# .
+# If all the images are well separated in either RGB, or HSV color space, then these features are useful for clustering.
+# 
+# However, a suggested next step—or next training—would be to encode the data differently. Perhaps using image classification with VGG16, but removing the last layer as a preprocess prior to k-means or DBSCAN.
+# 
+# 
+# .
+
+# # Notices & Disclaimers 
+# 
+# Intel technologies may require enabled hardware, software or service activation.
+# No product or component can be absolutely secure.
+# 
+# Your costs and results may vary.
+# 
+# © Intel Corporation. Intel, the Intel logo, and other Intel marks are trademarks of Intel Corporation or its subsidiaries. 
+# *Other names and brands may be claimed as the property of others.
+# 
+# 
+
+# In[ ]:
+
+
+print("All Done")
+

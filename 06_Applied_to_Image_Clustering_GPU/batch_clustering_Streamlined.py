@@ -17,6 +17,10 @@
 # limitations under the License.
 #===============================================================================
 
+from sklearnex import patch_sklearn
+patch_sklearn()
+import dpctl
+
 import matplotlib.pyplot as plt
 import numpy as np
 import glob
@@ -32,6 +36,7 @@ import random
 import operator
 import seaborn as sns
 import json
+
 
 def ReshapeShortFat(original):
     """
@@ -130,6 +135,23 @@ def read_results_json():
     return resultsDict
 
 def main():
+    # Compute Follows Data
+    # determine if GPU available:
+    for d in dpctl.get_devices(): #loop thru all available devices
+        gpu_available = False
+        for d in dpctl.get_devices():  # Note if GPU is found
+            if d.is_gpu:
+                gpu_device = dpctl.select_gpu_device()  # get device context
+                gpu_available = True
+            else:
+                cpu_device = dpctl.select_cpu_device()  # get device context
+    if gpu_available:
+        device = gpu_device
+        print("GPU targeted: ", device)
+    else:
+        device = cpu_device
+        print("CPU targeted: ", device)
+
     resultsDict = {}
     resultsDict = Read_Transform_Images(resultsDict)
     knee = 6   # number of clusters for KMeans
@@ -137,15 +159,40 @@ def main():
     n_components = 3  # nuber of components for PCA
     n_samples = 2     # number samples DBSCAN
     NP_images_STD = resultsDict['NP_images_STD'] # images as numpy array
-
-    print('Running ComputePCA on local CPU: ')
-    device_context = 'cpu'
-    pca = PCA(n_components=n_components)
-    PCA_fit_transform = pca.fit_transform(NP_images_STD) 
-    k_means = KMeans(n_clusters = knee, init='random')
-    db = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform)
-    km = k_means.fit(PCA_fit_transform) 
-    resultsDict['PCA_fit_transform'] = PCA_fit_transform
+    # Compute Follows Data: Determine if GPU is available
+    if gpu_available:
+        print('Running ComputePCA on GPU: ')   
+        pca = PCA(n_components=n_components) # same as CPU
+        
+        ############### Difference bewteen CPU & GPU code ###################
+        # convert data to dpctl.tensor prior to sklearnex call
+        NP_images_STD_device = dpctl.tensor.from_numpy(NP_images_STD,  \
+            usm_type = 'device', queue=dpctl.SyclQueue(device))
+        #####################################################################    
+        
+        PCA_fit_transform = pca.fit_transform(NP_images_STD_device) # Use data/device on GPU
+        k_means = KMeans(n_clusters = knee, init='random')
+        db = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform) #use GPU data
+        km = k_means.fit(PCA_fit_transform) #use GPU data
+        # print types: any result you intend to pass around and use later
+        # ensure it is converted to numpy prior to using it
+        print("GPU: type(db.labels_)", type(db.labels_))
+        print("GPU: type(km.labels_)", type(km.labels_))
+        print("GPU: type(PCA_fit_transform)", type(PCA_fit_transform))
+        
+        ################  Cast returned dpctl.tensor._usmarray.usm_ndarray to numpy ###################
+        print("GPU: type(dpctl.tensor.to_numpy(PCA_fit_transform))", type(dpctl.tensor.to_numpy(PCA_fit_transform)))
+        ######################################################################################
+        resultsDict['PCA_fit_transform'] = dpctl.tensor.to_numpy(PCA_fit_transform)
+    else:
+        print('Running ComputePCA on local CPU: ')
+        device_context = 'cpu'
+        pca = PCA(n_components=n_components)
+        PCA_fit_transform = pca.fit_transform(NP_images_STD) 
+        k_means = KMeans(n_clusters = knee, init='random')
+        db = DBSCAN(eps=EPS, min_samples = n_samples).fit(PCA_fit_transform)
+        km = k_means.fit(PCA_fit_transform) 
+        resultsDict['PCA_fit_transform'] = PCA_fit_transform
 
     #resultsDict['device_context'] = device
     resultsDict['imageClusters_db'] = len(np.unique(db.labels_))

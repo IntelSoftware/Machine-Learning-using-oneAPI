@@ -22,7 +22,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-import platform
 
 import pandas as pd
 import numpy as np
@@ -83,15 +82,14 @@ TrainingSize = [.001, .01, .03, .05, .1, .2, .5, .8]
 bestScore = {}
 hi = 0
 K = 3
-      
+       
 for tsz in TrainingSize:
     x_train, x_test, y_train, y_test = train_test_split( \
                 trainGalaxy, np.array(y), train_size=tsz)
     y_train = y_train.ravel()
     y_test = y_test.ravel()
-        
-    for name, modelFunc in myModels.items():   
-        print("Compute Device: ", platform.processor())
+
+    for name, modelFunc in myModels.items():       
         start = time.time()
         model = modelFunc
 
