@@ -1,5 +1,5 @@
 ## Datasets
-The data for each algorithm is generated synthetically usig datasets feature of sklearn
+- Data are synthesized by the author, bob chesebrough
 
 Requirements:
  - tqdm
@@ -10,7 +10,3 @@ Requirements:
  - matplotlib (for optional visualization output)
 
 Everything else is core python.
-
-
-
-
