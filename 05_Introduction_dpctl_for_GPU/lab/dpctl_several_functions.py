@@ -110,10 +110,10 @@ if __name__ == "__main__":
                 gpu_available = True
             else:
                 cpu_device = dpctl.select_cpu_device() 
-    if gpu_available:
-        print("GPU targeted: ", gpu_device)
-    else:
-        print("CPU targeted: ", cpu_device)
+#     if gpu_available:
+#         print("GPU targeted: ", gpu_device)
+#     else:
+#         print("CPU targeted: ", cpu_device)
         
     device = gpu_device
     for e in examples:

@@ -32,10 +32,10 @@ for d in dpctl.get_devices():
             gpu_available = True
         else:
             cpu_device = dpctl.select_cpu_device() 
-if gpu_available:
-    print("GPU targeted: ", gpu_device)
-else:
-    print("CPU targeted: ", cpu_device)
+# if gpu_available:
+#     print("GPU targeted: ", gpu_device)
+# else:
+#     print("CPU targeted: ", cpu_device)
 
 if gpu_available:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
