@@ -18,7 +18,10 @@ from sklearn.datasets import fetch_openml
 import pandas as pd
 
 ############################3 import dpctl #################################
+
 import dpctl
+print(dpctl.__version__)
+
 ############################################################################
 
 #########  apply patch here  prior to import of desired scikit-learn #######
@@ -60,19 +63,28 @@ else:
 
 
 if gpu_available:
+    if dpctl.__version__ == '0.12.0':
     ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
-    x_train_device = dpctl.tensor.from_numpy(x_train,  device = dpctl.SyclDevice("gpu"))
-    y_train_device = dpctl.tensor.from_numpy(y_train,  device = dpctl.SyclDevice("gpu"))
-    x_test_device = dpctl.tensor.from_numpy(x_test,  device = dpctl.SyclDevice("gpu"))
-    y_test_device = dpctl.tensor.from_numpy(y_test,  device = dpctl.SyclDevice("gpu"))
+        x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+        y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+        x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+        y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
     ##########################################################################################
+    else:
+    ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
+        x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+        y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+        x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+        y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+    ##########################################################################################
+    
 else:
     ################## add code to cast from Numpy to dpctl_tensors for Host CPU ####################    # target a remote host GPU when submitted via q.sh or qsub -I    
     # target a remote host CPU when submitted via q.sh or qsub -I
-    x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-    y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-    x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-    y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+    x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', device = dpctl.SyclDevice("cpu"))
+    y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', device = dpctl.SyclDevice("cpu"))
+    x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', device = dpctl.SyclDevice("cpu"))
+    y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', device = dpctl.SyclDevice("cpu"))
     ##########################################################################################
 
 params = {
