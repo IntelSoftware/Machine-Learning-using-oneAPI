@@ -18,6 +18,12 @@ import numpy as np
 ################################################################
 #
 # Import dptcl and patch here
+
+import dpctl
+print(dpctl.__version__)
+
+from sklearnex import patch_sklearn
+patch_sklearn()
 #
 ################################################################
 

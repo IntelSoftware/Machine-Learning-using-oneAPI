@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import dpctl
+print(dpctl.__version__)
+
 from sklearnex import patch_sklearn
 patch_sklearn()
 
@@ -20,7 +23,6 @@ import pandas as pd
 import numpy as np
 
 from sklearn.cluster import DBSCAN
-import dpctl
 
 X = np.array([[1., 2.], [2., 2.], [2., 3.],
             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)

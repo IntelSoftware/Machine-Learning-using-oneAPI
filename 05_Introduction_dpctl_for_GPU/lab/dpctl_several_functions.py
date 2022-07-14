@@ -19,6 +19,10 @@
 import numpy as np
 
 ############ Apply Patch first here #################################
+import dpctl
+print(dpctl.__version__)
+
+from sklearnex import patch_sklearn
 patch_sklearn()
 #####################################################################
 
@@ -28,7 +32,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.cluster import DBSCAN
 
 from sklearn.datasets import load_iris
-import dpctl
 
 def k_means_random(gpu_device):
     print("KMeans init='random'")
