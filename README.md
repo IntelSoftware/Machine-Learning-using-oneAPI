@@ -14,6 +14,9 @@
 After the git clone operation:
 
 ```bash
+mkdir MLoneAPI
+cd MLoneAPI
+git clone https://github.com/IntelSoftware/Machine-Learning-using-oneAPI.git
 cd  Machine-Learning-using-oneAPI
 pip install -r requirements.txt
 ```
