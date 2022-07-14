@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import dpctl
-print(dpctl.__version__)
+print("dpctl.__version__ = ", dpctl.__version__)
 
 from sklearnex import patch_sklearn
 patch_sklearn()
