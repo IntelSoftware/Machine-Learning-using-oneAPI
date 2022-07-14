@@ -9,6 +9,15 @@
 | Software                          | Intel&reg; AI Analytics Tookkit, Jupyter Notebooks, Intel DevCloud
 |                                   | pip install -r requirements.txt
   
+## Preparation to run
+
+After the git clone operation:
+
+```bash
+cd  Machine-Learning-using-oneAPI
+pip install -r requirements.txt
+```
+
 ## Purpose
 The Jupyter Notebooks in this training are intended to give instructors an accesible but challenging introduction to machine learning using oneAPI.  It enumerates and describes many commonly used Scikit-learn* allgorithms which are used  daily to address machine learning challenges.  The primary purpose is to accelerate commonly used Scikit-learn algorithms for Intel CPUs and GPU's using Intel Extensions for Scikit-learn* which is part of the Intel AI Analytics Toolkit powered by oneAPI.
 
