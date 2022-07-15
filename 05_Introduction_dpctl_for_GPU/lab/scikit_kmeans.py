@@ -48,7 +48,12 @@ else:
 
 if gpu_available:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+    
+
     kmeans = KMeans(n_clusters=2, init='random', random_state=0).fit(x_device)
     print(f"kmeans.labels_ = {kmeans.labels_}")
 else:
