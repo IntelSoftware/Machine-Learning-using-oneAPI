@@ -1,7 +1,15 @@
 ## Title
-Machine Learning using oneAPI
+ Introduction to Machine Learning
   
-## Preparation to run on Intel DevCloud
+## Requirements
+| Optimized for                     | Description
+|:---                               |:---
+| OS                                | Linux* Ubuntu 20.04, 20 Windows* 10
+| Hardware                          | Skylake with GEN9 or newer
+| Software                          | Intel&reg; AI Analytics Tookkit, Jupyter Notebooks, Intel DevCloud
+|                                   | pip install -r requirements.txt
+  
+## Preparation to run
 
 After the git clone operation:
 
