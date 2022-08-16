@@ -37,8 +37,13 @@ def k_means_random(gpu_device):
     print("KMeans init='random'")
     X = np.array([[1., 2.], [1., 4.], [1., 0.],
                   [10., 2.], [10., 4.], [10., 0.]], dtype=np.float32)
-    
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+
+    # target a remote hosy CPU when submitted via q.sh or qsub -I
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+
     kmeans = KMeans(n_clusters=2, random_state=0, init='random').fit(x_device)
     #kmeans = KMeans(n_clusters=2).fit(x_device)
 
@@ -55,9 +60,14 @@ def linear_regression(gpu_device):
     X = np.array([[1., 1.], [1., 2.], [2., 2.], [2., 3.]], dtype=np.float32)
     # y = 1 * x_0 + 2 * x_1 + 3
     y = np.dot(X, np.array([1, 2], dtype=np.float32)) + 3
-           
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-    y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+
+    # target a remote hosy CPU when submitted via q.sh or qsub -I
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+        y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12  
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+        y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
 
     reg = LinearRegression().fit(x_device, y_device)
     print("reg.score(X, y)")
@@ -74,8 +84,15 @@ def logistic_regression_lbfgs(gpu_device):
     print("LogisticRegression solver='lbfgs'")
     X, y = load_iris(return_X_y=True)
           
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-    y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+    #x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+    #y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
+    # target a remote hosy CPU when submitted via q.sh or qsub -I
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+        y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+        y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
 
     clf = LogisticRegression(random_state=0, solver='lbfgs').fit(
         x_device,
@@ -92,7 +109,13 @@ def dbscan(gpu_device):
     X = np.array([[1., 2.], [2., 2.], [2., 3.],
                   [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
     
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))    
+    #x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))    
+    # target a remote hosy CPU when submitted via q.sh or qsub -I
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12        
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+    
     clustering = DBSCAN(eps=3, min_samples=2).fit(x_device)
     print("clustering.labels_")
     print(clustering.labels_)
@@ -119,7 +142,7 @@ if __name__ == "__main__":
         print("GPU targeted: ", gpu_device)
     else:
         print("CPU targeted: ", cpu_device)
-        
+       
     device = gpu_device
     for e in examples:
         print("*" * 80)

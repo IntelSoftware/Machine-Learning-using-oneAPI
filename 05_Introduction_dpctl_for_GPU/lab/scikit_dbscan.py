@@ -42,7 +42,11 @@ else:
 
 if gpu_available:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+    if dpctl.__version__ == '0.12.0':
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
+    else:
+        x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device)) #dpctl 0.11
+
     #    #x_device = dpctl.tensor.from_numpy(x, usm_type = 'device', device = dpctl.SyclDevice("gpu")) #dpctl 0.12
 else:
     # target a remote hosy CPU when submitted via q.sh or qsub -I
