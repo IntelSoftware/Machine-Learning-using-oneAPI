@@ -60,24 +60,13 @@ else:
     print("CPU targeted: ", cpu_device)
 #########################################################################################
 
-
-
 if gpu_available:
-    if dpctl.__version__ == '0.12.0':
     ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
-        x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-        y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-        x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
-        y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', device = dpctl.SyclDevice("gpu"))
+        x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', device = "gpu")
+        y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', device = "gpu")
+        x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', device = "gpu")
+        y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', device = "gpu")
     ##########################################################################################
-    else:
-    ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
-        x_train_device = dpctl.tensor.from_numpy(x_train, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-        y_train_device = dpctl.tensor.from_numpy(y_train, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-        x_test_device = dpctl.tensor.from_numpy(x_test, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-        y_test_device = dpctl.tensor.from_numpy(y_test, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))
-    ##########################################################################################
-    
 else:
     ################## add code to cast from Numpy to dpctl_tensors for Host CPU ####################    # target a remote host GPU when submitted via q.sh or qsub -I    
     # target a remote host CPU when submitted via q.sh or qsub -I
@@ -92,13 +81,17 @@ params = {
     'weights': 'distance'
 }
 print('dataset shape: ', x_train_device.shape)
+from sklearn.linear_model import LogisticRegression
+#from sklearn.neighbors import KNeighborsClassifier
+#knn = KNeighborsClassifier(**params).fit(x_train_device, y_train_device)
+clf = LogisticRegression(random_state=0, solver='lbfgs').fit(x_train_device, y_train_device) # or lbfgs
 
-from sklearn.neighbors import KNeighborsClassifier
-knn = KNeighborsClassifier(**params).fit(x_train_device, y_train_device)
+# predictedGPU = knn.predict(x_test_device) #Predict on GPU
+# predictedCPU = knn.predict(x_test) #Predict on CPU
 
-predictedGPU = knn.predict(x_test_device) #Predict on GPU
-predictedCPU = knn.predict(x_test) #Predict on CPU
-    
+predictedGPU = clf.predict(x_test_device) #Predict on GPU
+predictedCPU = clf.predict(x_test) #Predict on CPU
+
 ################## add code to cast returned results to Numpy to dpctl_tensors ################  
 # only need to do this for predict. fit_predict, transform, fit_transform IF I need to use results
 # target a remote host GPU when submitted via q.sh or qsub -I    
