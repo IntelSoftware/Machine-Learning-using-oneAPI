@@ -1,7 +1,7 @@
 from tqdm import tqdm
 
 ############################# Import dpctl ######################
-
+import dpctl
 ##################################################################
 
 def gallery(cases):
@@ -18,57 +18,55 @@ def gallery(cases):
             x.astype(float)
             y.astype(float)
             ###################  Add code to get_devices, get_devices, select_gpu_device  ########
-
+            for d in dpctl.get_devices():
+                gpu_available = False
+                for d in dpctl.get_devices():
+                    if d.is_gpu:
+                        gpu_device = dpctl.select_gpu_device()
+                        gpu_available = True
+                    else:
+                        cpu_device = dpctl.select_cpu_device() 
+            if gpu_available:
+                print("GPU targeted: ", gpu_device)
+            else:
+                print("CPU targeted: ", cpu_device)
             ######################################################################################
 
-            
-            
             ############### Add code to convert x & y to dpctl.tensors x_device, y_device #########
-
-            
+#             x_device = dpctl.tensor.from_numpy(x, usm_type = 'device', device = "gpu")
+#             y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', device = "gpu")
+            x_device = dpctl.tensor.asarray(x, usm_type = 'device', device = "gpu")
+            y_device = dpctl.tensor.asarray(y, usm_type = 'device', device = "gpu")            
             ######################################################################################
 
-            
-            
             if hasattr(estimator, 'fit_predict'):
                 ###################### Modify code to fit  x_device, y_device ####################
-                estimator.fit(x, y)
+                estimator.fit(x_device, y_device)
                 ##################################################################################
                 
                 print("fit_predict section", name," fit")
                 
                 ###################### Modify code to predict  x_device, y_device ####################
-                catch_device = estimator.fit_predict(x, y)
+                catch_device = estimator.fit_predict(x_device, y_device)
                 ######################################################################################
                 
                 print("fit_predict section", name," fit_predict")   
                 
                 #######################################################################################
                 ##### Since we will use the prediction to score accuracy metrics, we need to cast it ##
-
+                predictedHost = dpctl.tensor.to_numpy(catch_device)
                 #######################################################################################
                 
-                # print("fit_predict section dpctl.tensor.to_numpy", name)
-                ########use the correct version of the two lines below (comment one out) ##########
-                ####  print(predictedHost) 
-                print(catch_device)
-                ###################################################################################
-                
+                print("fit_predict section dpctl.tensor.to_numpy", name)
+                print(predictedHost)  
             elif hasattr(estimator, 'predict'):
-                estimator.fit(x, y)
+                estimator.fit(x_device, y_device)
                 print("predict section", name, " fit")
-                catch_device = estimator.predict(x)
+                catch_device = estimator.predict(x_device)
                 print("predict section", name, " predict")
-                
-                ################# Add cast to move returned result to ddpctl.tensor, 
-                ################# put result in varibale named predicted ###########
-                ################# then print(predicted)
-
-                ###############################################################################
-                
-                print(catch_device)
-                
-                             
+                predictedHost = dpctl.tensor.to_numpy(catch_device)
+                print("predict section dpctl.tensor.to_numpy", name)
+                print(predictedHost)                             
         except Exception as e:
             print('A problem has occurred from the Problematic code:\n', e)
             print("Not Supported as Configured\n\n")
@@ -97,6 +95,46 @@ def get_cases():
             }
         }
     },
+    'Random Forest': {
+        "algorithm": {
+            'estimator': sklearn.ensemble.RandomForestClassifier,
+            'params': {
+                'random_state': 43,
+            }
+        },
+        "data": {
+            'generator': sklearn.datasets.make_classification,
+            'params':
+            {
+                'n_samples': 10000,
+                'n_features': 40,
+                'n_classes': 3,
+                'n_informative': 5,
+                'random_state': 43,
+            }
+        }
+    },               
+    'SVC': {
+        "algorithm": {
+            'estimator': sklearn.svm.SVC,
+            'params': {
+                'random_state': 43,
+                'kernel': 'linear',
+                'C': '100'
+            }
+        },
+        "data": {
+            'generator': sklearn.datasets.make_classification,
+            'params':
+            {
+                'n_samples': 10000,
+                'n_features': 40,
+                'n_classes': 3,
+                'n_informative': 5,
+                'random_state': 43,
+            }
+        }
+    }, 
     'KNN Classifier': {
         "algorithm": {
             'estimator': sklearn.neighbors.KNeighborsClassifier,
