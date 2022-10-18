@@ -8,7 +8,7 @@ After the git clone operation:
 ```bash
 mkdir MLoneAPI
 cd MLoneAPI
-source /glob/development-tools/versions/oneapi/2022.3/oneapi/setvars.sh --force
+source /glob/development-tools/versions/oneapi/2022.2/oneapi/setvars.sh --force
 conda activate base
 git clone https://github.com/IntelSoftware/Machine-Learning-using-oneAPI.git
 cd  Machine-Learning-using-oneAPI
