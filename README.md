@@ -17,7 +17,8 @@ pip install -r requirements.txt
 
 ## Currently Known Issues:
 
-### Known issue: SVC and KNN not currently available for GPU device using the dpctl library
+### Known issue: 
+- SVC and KNN not currently available for GPU device using the dpctl library
 
 
 
