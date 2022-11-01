@@ -42,7 +42,7 @@ else:
 
 
 x_device = dpctl.tensor.from_numpy(X, 
-            usm_type = 'device', device = "gpu") 
+            usm_type = 'device', device = "gpu:0") 
 
 clustering_host = DBSCAN(eps=3, min_samples=2).fit(x_device)
 

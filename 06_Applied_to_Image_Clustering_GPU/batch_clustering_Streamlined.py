@@ -1,5 +1,6 @@
 # batch_clustering_Streamlined.py
 
+
 #===============================================================================
 # Copyright 2014-2021 Intel Corporation
 #
@@ -69,7 +70,7 @@ def ReshapeShortFat(original):
 
 def Read_Transform_Images(resultsDict, 
                          imagesFilenameList = [], 
-                         FSWRITE = False, path = 'data/'): 
+                         FSWRITE = False, path = '../03_Applied_to_Image_Clustering_CPU/data/'): 
     print('Running Read_Transform_Images on CPU: ')
     imageToClusterPath = path
     if len(imagesFilenameList) == 0:
@@ -125,11 +126,11 @@ def write_results_json(resultsDict):
         del resultsDict['list_PIL_Images']
     if 'NP_images_STD' in resultsDict.keys():
         del resultsDict['NP_images_STD']
-    with open("../results/resultsDict.json", "w") as outfile:
+    with open("results/resultsDict.json", "w") as outfile:
         json.dump(resultsDict, outfile, cls=NumpyEncoder)
 
 def read_results_json():
-    with open('../results/resultsDict.json') as json_file:
+    with open('results/resultsDict.json') as json_file:
         resultsDict = json.load(json_file)
     return resultsDict
 

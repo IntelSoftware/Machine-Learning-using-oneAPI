@@ -39,7 +39,7 @@ def k_means_random(gpu_device):
                   [10., 2.], [10., 4.], [10., 0.]], dtype=np.float32)
 
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu") #dpctl 0.12
+    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu:0") #dpctl 0.12
 
     kmeans = KMeans(n_clusters=2, random_state=0, init='random').fit(x_device)
     #kmeans = KMeans(n_clusters=2).fit(x_device)
@@ -59,8 +59,8 @@ def linear_regression(gpu_device):
     y = np.dot(X, np.array([1, 2], dtype=np.float32)) + 3
 
     # target a remote hosy CPU when submitted via q.sh or qsub -I
-    x_device = dpctl.tensor.asarray(X, usm_type = 'device', device = "gpu") #dpctl 0.12
-    y_device = dpctl.tensor.asarray(y, usm_type = 'device', device = "gpu") #dpctl 0.12  
+    x_device = dpctl.tensor.asarray(X, usm_type = 'device', device = "gpu:0") #dpctl 0.12
+    y_device = dpctl.tensor.asarray(y, usm_type = 'device', device = "gpu:0") #dpctl 0.12  
 
     reg = LinearRegression().fit(x_device, y_device)
     print("reg.score(X, y)")
@@ -77,8 +77,8 @@ def logistic_regression_lbfgs(gpu_device):
     print("LogisticRegression solver='lbfgs'")
     X, y = load_iris(return_X_y=True)
 
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu") #dpctl 0.12
-    y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', device = "gpu") #dpctl 0.12
+    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu:0") #dpctl 0.12
+    y_device = dpctl.tensor.from_numpy(y, usm_type = 'device', device = "gpu:0") #dpctl 0.12
 
     clf = LogisticRegression(random_state=0, solver='lbfgs').fit(
         x_device,
@@ -98,7 +98,7 @@ def dbscan(gpu_device):
     #x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', queue=dpctl.SyclQueue(gpu_device))    
     # target a remote hosy CPU when submitted via q.sh or qsub -I
 
-    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu") #dpctl 0.12        
+    x_device = dpctl.tensor.from_numpy(X, usm_type = 'device', device = "gpu:0") #dpctl 0.12        
 
     clustering = DBSCAN(eps=3, min_samples=2).fit(x_device)
     print("clustering.labels_")
