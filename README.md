@@ -19,6 +19,7 @@ pip install -r requirements.txt
 
 ### Known issue: 
 - SVC and KNN not currently available for GPU device using the dpctl library - the fit() function(s) for these two algorithm's state that they do not support the device
+- for submitting to qsub, consider using gen9 rather than gpu in the qsub command. gen9 supports 64 bit GPU, and the node allocated for 32 bit gpu are currently not working correctly with this code - still in investigation - as work around submit to gen9
 
 
 ## Purpose
