@@ -86,14 +86,12 @@ from sklearn.ensemble import RandomForestClassifier
 #from sklearn.neighbors import KNeighborsClassifier
 #LR = KNeighborsClassifier(**params).fit(x_train_device, y_train_device)
 #clf = LogisticRegression(random_state=0, solver='lbfgs').fit(x_train_device, y_train_device) # or lbfgs
-clf = RandomForestClassifier(random_state=0).fit(x_train_device, y_train_device) # or lbfgs
+
 TestingString = "RandomForestClassifier"
-
-# predictedGPU = knn.predict(x_test_device) #Predict on GPU
-# predictedCPU = knn.predict(x_test) #Predict on CPU
-
+clf = RandomForestClassifier(random_state=0).fit(x_train_device, y_train_device) 
 predictedGPU = clf.predict(x_test_device) #Predict on GPU
-predictedCPU = clf.predict(x_test) #Predict on CPU
+#predictedCPU = clf.predict(x_test) #Predict on CPU
+predictedGPUNumpy = dpctl.tensor.to_numpy(predictedGPU)
 
 ################## add code to cast returned results to Numpy to dpctl_tensors ################  
 # only need to do this for predict. fit_predict, transform, fit_transform IF I need to use results
