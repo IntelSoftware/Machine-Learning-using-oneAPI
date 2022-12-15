@@ -90,7 +90,7 @@ from sklearn.ensemble import RandomForestClassifier
 TestingString = "RandomForestClassifier"
 clf = RandomForestClassifier(random_state=0).fit(x_train_device, y_train_device) 
 predictedGPU = clf.predict(x_test_device) #Predict on GPU
-#predictedCPU = clf.predict(x_test) #Predict on CPU
+predictedCPU = clf.predict(x_test) #Predict on CPU
 predictedGPUNumpy = dpctl.tensor.to_numpy(predictedGPU)
 
 ################## add code to cast returned results to Numpy to dpctl_tensors ################  
