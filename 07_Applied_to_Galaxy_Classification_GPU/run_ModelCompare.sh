@@ -1,5 +1,5 @@
 #!/bin/bash
-source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
-/bin/echo "##" $(whoami) is compiling Machine Learning using oneAPI -- Practicum_analyzeGalaxyBatch.py
+# source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+source  /glob/development-tools/versions/oneapi/2022.3.1/inteloneapi/setvars.sh 
 python Practicum_analyzeGalaxyBatch.py
 

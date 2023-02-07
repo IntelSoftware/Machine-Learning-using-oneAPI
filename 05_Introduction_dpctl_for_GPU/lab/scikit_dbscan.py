@@ -27,22 +27,17 @@ from sklearn.cluster import DBSCAN
 X = np.array([[1., 2.], [2., 2.], [2., 3.],
             [8., 7.], [8., 8.], [25., 80.]], dtype=np.float32)
 
-for d in dpctl.get_devices():
-    gpu_available = False
-    for d in dpctl.get_devices():
-        if d.is_gpu:
-            gpu_device = dpctl.select_gpu_device()
-            gpu_available = True
-        else:
-            cpu_device = dpctl.select_cpu_device() 
-if gpu_available:
-    print("GPU targeted: ", gpu_device)
-else:
-    print("CPU targeted: ", cpu_device)
 
+device = dpctl.select_default_device()
+print("Using device ...")
+device.print_device_info()
+
+
+# x_device = dpctl.tensor.from_numpy(X, 
+#             usm_type = 'device', device = "gpu:0") 
 
 x_device = dpctl.tensor.from_numpy(X, 
-            usm_type = 'device', device = "gpu:0") 
+            usm_type = 'device', device = device) 
 
 clustering_host = DBSCAN(eps=3, min_samples=2).fit(x_device)
 

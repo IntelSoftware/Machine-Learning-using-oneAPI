@@ -33,27 +33,37 @@ X = np.array([[1,  2], [1,  4], [1,  0],
 # You need to re-import scikit-learn algorithms after the patch
 from sklearn.cluster import KMeans
 
-for d in dpctl.get_devices():
-    gpu_available = False
-    for d in dpctl.get_devices():
-        if d.is_gpu:
-            gpu_device = dpctl.select_gpu_device()
-            gpu_available = True
-        else:
-            cpu_device = dpctl.select_cpu_device() 
-if gpu_available:
-    print("GPU targeted: ", gpu_device)
-else:
-    print("CPU targeted: ", cpu_device)
+# for d in dpctl.get_devices():
+#     gpu_available = False
+#     for d in dpctl.get_devices():
+#         if d.is_gpu:
+#             gpu_device = dpctl.select_gpu_device()
+#             gpu_available = True
+#         else:
+#             cpu_device = dpctl.select_cpu_device() 
+# if gpu_available:
+#     print("GPU targeted: ", gpu_device)
+# else:
+#     print("CPU targeted: ", cpu_device)
 
-if gpu_available:
-    # target a remote hosy CPU when submitted via q.sh or qsub -I
-    #x_device = dpctl.tensor.from_numpy(X, 
-    #           usm_type = 'device', device = "gpu:0") #dpctl 0.12
-    x_device = dpctl.tensor.asarray(X, 
-                usm_type = 'device', device = "gpu:0")
+# if gpu_available:
+#     # target a remote hosy CPU when submitted via q.sh or qsub -I
+#     #x_device = dpctl.tensor.from_numpy(X, 
+#     #           usm_type = 'device', device = "gpu:0") #dpctl 0.12
+#     x_device = dpctl.tensor.asarray(X, 
+#                 usm_type = 'device', device = "gpu:0")
     
-    kmeans = KMeans(n_clusters=2, init='random', random_state=0).fit(x_device)
-    print(f"kmeans.labels_ = {kmeans.labels_}")
-else:
-    print("GPU not found")
+#     kmeans = KMeans(n_clusters=2, init='random', random_state=0).fit(x_device)
+#     print(f"kmeans.labels_ = {kmeans.labels_}")
+# else:
+#     print("GPU not found")
+
+device = dpctl.select_default_device()
+print("Using device ...")
+device.print_device_info()
+
+x_device = dpctl.tensor.asarray(X,  device = device)
+#x_device = dpctl.tensor.to_numpy(X,  device = device)
+
+kmeans = KMeans(n_clusters=2, init='random', random_state=0).fit(x_device)
+print(f"kmeans.labels_ = {kmeans.labels_}")
