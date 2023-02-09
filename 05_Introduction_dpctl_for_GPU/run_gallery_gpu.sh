@@ -1,5 +1,5 @@
 #!/bin/bash
-source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
-/bin/echo "##" $(whoami) is compiling AI Essentials Module1 -- gallery_gpu.py
+# source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+source  /glob/development-tools/versions/oneapi/2022.3.1/inteloneapi/setvars.sh > /dev/null 2>&1
 python lab/gallery_gpu.py
 

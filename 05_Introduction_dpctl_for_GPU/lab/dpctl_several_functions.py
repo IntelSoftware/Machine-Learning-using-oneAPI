@@ -114,6 +114,10 @@ if __name__ == "__main__":
         logistic_regression_lbfgs,
     ]
 
+#     gpu_device = dpctl.select_default_device()
+#     print("Using device ...")
+#     gpu_device.print_device_info()
+
     for d in dpctl.get_devices():
         gpu_available = False
         for d in dpctl.get_devices():

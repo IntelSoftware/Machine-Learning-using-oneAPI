@@ -12,25 +12,16 @@ print(dpctl.__version__)
 x = np.array([[1,1,1],[2,-1,3],[3,2,1]])
 
 ###################  Add code to get_devices, get_devices, select_gpu_device  ########
-for d in dpctl.get_devices():
-    gpu_available = False
-    for d in dpctl.get_devices():
-        if d.is_gpu:
-            gpu_device = dpctl.select_gpu_device()
-            gpu_available = True
-        else:
-            cpu_device = dpctl.select_cpu_device() 
-if gpu_available:
-    print("GPU targeted: ", gpu_device)
-else:
-    print("CPU targeted: ", cpu_device)
-    
+
+device = dpctl.select_default_device()
+print("Using device ...")
+device.print_device_info()    
 ######################################################################################
 
             
             
 ############### Add code to convert x to dpctl.tensor x_device #########
-x_device = dpctl.tensor.asarray(x, usm_type = 'device', device = "gpu")
+x_device = dpctl.tensor.asarray(x, usm_type = 'device', device = device)
 ######################################################################################
 
 

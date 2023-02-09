@@ -25,43 +25,23 @@ def gallery(cases):
             x.astype(float)
             y.astype(float)
             ###################  Add code to get_devices, get_devices, select_gpu_device  ########
-            for d in dpctl.get_devices():
-                gpu_available = False
-                for d in dpctl.get_devices():
-                    if d.is_gpu:
-                        gpu_device = dpctl.select_gpu_device()
-                        gpu_available = True
-                    else:
-                        cpu_device = dpctl.select_cpu_device() 
-            if gpu_available:
-                print("GPU targeted: ", gpu_device)
-            else:
-                print("CPU targeted: ", cpu_device)
+            device = dpctl.select_default_device()
+            print("Using device ...")
+            device.print_device_info()
             ######################################################################################
 
             # Is this computed on GPU or on Host? Remember compute follows data
             x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=72)
             
             ############### Add code to convert x & y to dpctl.tensors x_device, y_device #########
-            if gpu_available:
-                ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
-                    x_train_device = dpctl.tensor.asarray(x_train, usm_type = 'device', device = "gpu")
-                    y_train_device = dpctl.tensor.asarray(y_train, usm_type = 'device', device = "gpu")
-                    x_test_device = dpctl.tensor.asarray(x_test, usm_type = 'device', device = "gpu")
-                    y_test_device = dpctl.tensor.asarray(y_test, usm_type = 'device', device = "gpu")
-                ##########################################################################################
-            else:
-                ################## add code to cast from Numpy to dpctl_tensors for Host CPU ####################    # target a remote host GPU when submitted via q.sh or qsub -I    
-                # target a remote host CPU when submitted via q.sh or qsub -I
-                x_train_device = dpctl.tensor.asarray(x_train, usm_type = 'device', device = "cpu")
-                y_train_device = dpctl.tensor.asarray(y_train, usm_type = 'device', device = "cpu")
-                x_test_device = dpctl.tensor.asarray(x_test, usm_type = 'device', device = "cpu")
-                y_test_device = dpctl.tensor.asarray(y_test, usm_type = 'device', device = "cpu")
 
-            ######################################################################################
-
-            
-            
+            ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
+            x_train_device = dpctl.tensor.asarray(x_train, usm_type = 'device', device = device)
+            y_train_device = dpctl.tensor.asarray(y_train, usm_type = 'device', device = device)
+            x_test_device = dpctl.tensor.asarray(x_test, usm_type = 'device', device = device)
+            y_test_device = dpctl.tensor.asarray(y_test, usm_type = 'device', device = device)
+            ##########################################################################################
+             
             if hasattr(estimator, 'fit_predict'):
                 ###################### Modify code to fit  x_device, y_device ####################
                 estimator.fit(x_train_device, y_train_device)
@@ -93,8 +73,6 @@ def gallery(cases):
                 print("predict section", name, " predict")
                 
                 ################# Add cast to move returned result to ddpctl.tensor, 
-                ################# put result in varibale named predicted ###########
-                ################# then print(predicted)
                 catch_device = estimator.predict(x_test_device)
                 cast_catch_device = dpctl.tensor.to_numpy(catch_device)
                 print('len(cast_catch_device)',len(cast_catch_device))
