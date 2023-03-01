@@ -45,41 +45,16 @@ y = y[:subset]
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=72)
 
 #########  Add code to get GPU context and set flag if GPU is available   #######
-#########  Add code to to set CPU context as well so this runs on eiher device   #######
-# for d in dpctl.get_devices():
-#     gpu_available = False
-#     for d in dpctl.get_devices():
-#         if d.is_gpu:
-#             gpu_device = dpctl.select_gpu_device()
-#             gpu_available = True
-#         else:
-#             cpu_device = dpctl.select_cpu_device() 
-# if gpu_available:
-#     print("GPU targeted: ", gpu_device)
-# else:
-#     print("CPU targeted: ", cpu_device)
-#########################################################################################
-
 device = dpctl.select_default_device()
 print("Using device ...")
 device.print_device_info()
 
-
-# if gpu_available:
-    ################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
+################## add code to cast from Numpy to dpctl_tensors #########################    # target a remote host GPU when submitted via q.sh or qsub -I
 x_train_device = dpctl.tensor.asarray(x_train, usm_type = 'device', device = device)
 y_train_device = dpctl.tensor.asarray(y_train, usm_type = 'device', device = device)
 x_test_device = dpctl.tensor.asarray(x_test, usm_type = 'device', device = device)
 y_test_device = dpctl.tensor.asarray(y_test, usm_type = 'device', device = device)
-    ##########################################################################################
-# else:
-#     ################## add code to cast from Numpy to dpctl_tensors for Host CPU ####################    # target a remote host GPU when submitted via q.sh or qsub -I    
-#     # target a remote host CPU when submitted via q.sh or qsub -I
-#     x_train_device = dpctl.tensor.asarray(x_train, usm_type = 'device', device = "cpu")
-#     y_train_device = dpctl.tensor.asarray(y_train, usm_type = 'device', device = "cpu")
-#     x_test_device = dpctl.tensor.asarray(x_test, usm_type = 'device', device = "cpu")
-#     y_test_device = dpctl.tensor.asarray(y_test, usm_type = 'device', device = "cpu")
-    ##########################################################################################
+##########################################################################################
 
 params = {
     'n_neighbors': 40,  
@@ -104,8 +79,10 @@ predictedGPUNumpy = dpctl.tensor.to_numpy(predictedGPU)
 predictedGPUNumpy = dpctl.tensor.to_numpy(predictedGPU)
 ###############################################################################################
 
-reportGPU = metrics.classification_report(y_test, predictedGPUNumpy)
-print(f"Classification report for {TestingString} Fit and Predicted on GPU:\n{reportGPU}\n")
+print(predictedGPUNumpy)
+print(predictedCPU)
+# reportCPU = metrics.classification_report(y_test, predictedCPU)
+# print(f"Classification report for {TestingString}  Fit on GPU and Predicted on CPU:\n{reportCPU}\n")
 
-reportCPU = metrics.classification_report(y_test, predictedCPU)
-print(f"Classification report for {TestingString}  Fit on GPU and Predicted on CPU:\n{reportCPU}\n")
+# reportGPU = metrics.classification_report(y_test, predictedGPUNumpy)
+#print(f"Classification report for {TestingString} Fit and Predicted on GPU:\n{reportGPU}\n")

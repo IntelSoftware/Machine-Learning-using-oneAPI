@@ -8,7 +8,7 @@ After the git clone operation:
 ```bash
 mkdir MLoneAPI
 cd MLoneAPI
-source  /glob/development-tools/versions/oneapi/2022.3.1/inteloneapi/setvars.sh 
+source  /glob/development-tools/versions/oneapi/2022.3.1/inteloneapi/setvars.sh --force 
 conda activate base
 pip install ipykernel
 python -m ipykernel install --user --name 2022.3.1 --display-name "oneAPI 2022.3.1"
