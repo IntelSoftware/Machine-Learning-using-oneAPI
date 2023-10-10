@@ -1,7 +1,23 @@
-## Title
+## Machine Learning using oneAPI
 Machine Learning using oneAPI
-  
-## Preparation to run on Intel DevCloud
+
+## Preparation to run on Intel Developer Cloud Beta
+To Access via Intel(R) Developer Cloud:
+
+- First follow the [**IDC registration and login process**](https://github.com/bjodom/idc)
+
+After you follow the steps above and have two terminals setup for PVS Batch access and for reverse tunneling:
+
+- mkdir MLoneAPI
+- cd MLoneAPI
+- git clone https://github.com/IntelSoftware/Machine-Learning-using-oneAPI.git
+- cd  Machine-Learning-using-oneAPI
+- . lab_setup.sh
+- pip install -r requirements.txt
+- jupyter lab --ip 10.10.10.XX
+
+
+## Preparation to run on Intel previous DevCloud (code named Colfax)
 
 After the git clone operation:
 
