@@ -61,14 +61,6 @@ Third party program Licenses can be found here: [third-party-programs.txt](https
 - Statistics
 
 
-## Survey
-
-Please fill out our survey to let us know hwo we can imporve or how it might impact your developer skills
-
-https://intel.az1.qualtrics.com/jfe/form/SV_9uHKSYFaiC9Xjeu
-
-![Survey.jpg](Survey.jpg)
-
 
 ## Syllabus
 
