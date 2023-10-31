@@ -22,7 +22,7 @@ From a Jupyterhub terminal instance:
 - . lab_setup.sh
 - pip install -r requirements.txt
 
-# Preparation to run on Intel DevCloud (aka Colfax)
+## Preparation to run on Intel DevCloud (aka Colfax)
 mkdir MLoneAPI
 cd MLoneAPI
 source  /glob/development-tools/versions/oneapi/2022.3.1/inteloneapi/setvars.sh --force 
