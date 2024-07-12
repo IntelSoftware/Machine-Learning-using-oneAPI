@@ -1,0 +1,738 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# # Module 02 Practicum: Let's Explore Some Telco Churn Data
+# 
+# ## Learning Objectives:
+# -  Practicum: Examine the following notebook identifying opportunities to apply patching_sklearn() to aalgorithms applied to tabular data.
+# - Apply code changes to try different classifiers optimized with Intel Extensions for scikit-learn*
+# - Target Decision Tree for replacement by a classifier(x2) of your choice
+# - Apply patching to PCA
+# - Apply patching to Kmeans
+# - **Synthesize** your learning by applying patching to the DBSCAN algorithm
+# 
+# Data can be found 
+# 
+# Kaggle: [Telco Customer Churn](https://www.kaggle.com/datasets/pangkw/telco-churn)
+# 
+# License
+# CC0: Public Domain
+# 
+# Download the data from Kaggle - l0ok for the following download icon:
+# 
+# ![Download from Kaggle](Assets/ChurnDownload.png)
+# 
+# This will download the file 'Telco Churn dataset.xlsx' to your local machine
+# 
+# Upload this file to DevCloud - simply drag the downloaded file to the data folder for this project on DevCloud
+# 
+# ![Upload to DevCloud data folder](Assets/DragHere.jpg)
+# 
+# ### Dependencies:
+# - pip install seaborn
+# - pip install openpyxl
+# 
+# # Practicum:
+# 
+# Work through each cell looking for places to patch or unpatch as needed to maxiumize the performace of each cell
+# 
+# # What’s in the Telco Customer Churn data set?
+# This data set provides info to help you predict behavior to retain customers. You can analyze all relevant customer data and develop focused customer retention programs.
+# 
+# A telecommunications company is concerned about the number of customers leaving their landline business for cable competitors. They need to understand who is leaving. Imagine that you’re an analyst at this company and you have to find out who is leaving and why.
+# 
+# The data set includes information about:
+# * Customers who left within the last month – the column is called Churn
+# * Services that each customer has signed up for – phone, multiple lines, internet, online security, online backup, device protection, tech support, and streaming TV and movies
+# * Customer account information – how long they’ve been a customer, contract, payment method, paperless billing, monthly charges, and total charges
+# * Demographic info about customers – gender, age range, and if they have partners and dependents
+# 
+
+# # EXERCISES
+# 
+# - Patch the PCA portion
+# 
+# - Patch the DBSCAN portion in the middle section
+# 
+# - Patch the kmeans portion
+# 
+# - Test patched and unpatched versions of sklearn train_test_split near very end of the notebook: Make observations about elpased time given the dataset
+# 
+# - Try at least two optimized sklearnex algorithms as replacements for DecisionTreeClassifier at the end of the notebook
+# 
+# - Fill in the table below to report the times for patched and unpatched:
+# 
+# Algorithm |Patched Time |UnPatched Time
+# -----|-----|----- 
+# PCA|.....|.....
+# Kmeans|.....|.....
+# DBSCAN|.....|.....
+# Train_test_split|.....|.....
+# Decision Tree|.....|.....
+# SVC|.....|.....
+# Random Forest|.....|.....
+# 
+
+# # Choose interactive or inline plotting
+
+# In[ ]:
+
+
+#%matplotlib notebook
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+
+# In[ ]:
+
+
+import pandas as pd
+import numpy as np
+
+churn = pd.read_excel('data/Telco Churn dataset.xlsx')
+
+churn.info()
+
+
+# In[ ]:
+
+
+churn.shape
+
+
+# # Handy Utilities
+
+# In[ ]:
+
+
+from itertools import compress
+class MaskableList(list):
+    def __getitem__(self, index):
+        try: return super(MaskableList, self).__getitem__(index)
+        except TypeError: return MaskableList(compress(self, index))
+        
+def DescribeItemRange(df):  # Show the number of unique values in each column
+    cols = df.columns.tolist()
+    vals = pd.DataFrame ( [ len(set(df[s])) for s in df.columns.tolist()] ).T
+    vals.columns = cols
+    return vals
+
+def ReplaceNans (df):  #replace NaNs in all df locations with zeros
+    df.fillna(0)
+    return df
+
+def SelectZeroColumns (df): #return a list with column names of zero filled columns
+    dropcols = (df == 0).all().astype(int).tolist()
+    return [s for s in mylist[dropcols]  ]
+
+def SelectNonZeroColumns(df):  #return a list with columns names of nonzero columns
+    return list(set(StringifyColumnNames(df))- set(SelectZeroColumns(df) ))
+
+def StringifyColumnNames (df):   # handle unicode strings and covert to normal strings
+    cols = df.columns.tolist()
+    cols = [str(r) for r in cols]
+    return cols
+
+def Factorize(df):
+    return  df.apply(lambda x: pd.factorize(x)[0])
+
+def MyOneHotEncode(pdold, StaticCols, EncodeCols):
+    """MyOneHotEncode performs OneHotEncoding on specified columns in our dataframe"""
+    """pdold is the old dataframe we are paasing in"""
+    """StaticCols is a list of columns we do not wish to encode"""
+    """EncodeCols is a list of columns we wish to encode"""
+    # make sure that we our static list is not in our encode list
+    cols_OneHotEncode = sorted(list(set(EncodeCols) - set(StaticCols)))
+    # create a new dataframe which represents the static columns
+    pdnew = pdold[StaticCols]
+    # loop thru the endcode list and OneHotEncode (using get_dummies) each column in the encode list
+    # note - this will typically map a single column to several columns - one for each value contained in the original column
+    for col in cols_OneHotEncode:
+        new_names = []
+        enc = pd.get_dummies(pdold[col])
+        for subcol in  enc:
+            name = col + str(subcol)
+            new_names.append(name)
+        enc.columns = new_names
+        # concat the new OneHotEnoded dataframe to the original
+        pdnew = pd.concat([pdnew, enc], axis=1)
+    return pdnew
+
+
+def my_dbscan(df, eps_):
+# Compute DBSCAN
+    labels = []
+    db = DBSCAN(eps=eps_, min_samples=100).fit(df)
+    labels = pd.DataFrame(db.labels_ )
+    #n_clusters_ = labels[0].madf()
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    # Number of clusters in labels, ignoring noise if present.
+    #tdft = 'dbsPCA_' + str(n_clusters_)
+    tdft = 'dbsPCA'
+    df[tdft]=labels
+    print('eps:{} Estimated number of clusters: {}'.format(eps_, n_clusters_) ) 
+    return df, labels, n_clusters_
+
+
+# # Ensure there are no NaNs or blank data
+
+# In[ ]:
+
+
+churn.isna().sum()
+
+
+# # Describe the Range of Values in each Column
+
+# In[ ]:
+
+
+DescribeItemRange(churn)
+
+
+# ## Explore Churn Data
+# * the number of rows, 
+# * the number of columns,
+# * any descriptive statistics
+# 
+# ## Separate Categorical from Numeric Data for Further Processing
+# * numeric data for now will be kept in a separate dataframe
+# * categorical data will be in its own dataframe for be transformed into values in kind of pipeline
+
+# In[ ]:
+
+
+# here are the columns which are categorical
+churn_cat_col = [key for key in dict(churn.dtypes) if dict(churn.dtypes)[key] in ['object']]
+# here are the columns which are numeric
+churn_num_col = [key for key in dict(churn.dtypes) if dict(churn.dtypes)[key] in ['float64', 'int64']]
+#create a dataframe to hold categorical data
+churn_cat = churn[churn_cat_col]
+print("Categorical columns")
+display(churn_cat.head())
+#create a dataframe to hold numeric data
+churn_num = churn[churn_num_col]
+# display first few rows of numerical data to get a feel for them
+print("Numerical columns")
+display(churn_num.head())
+
+
+# # Convert Categories to Numbers
+# 
+# we apply the factorize fucntion to all the categories as a first pass. We created a new dataframe here called **churn_cat_encode**
+# 
+# The commented out code woudl allow us to map back to the original form if needed
+# 
+# PaymentMethod for example will now have numeric values like 0, 1, 2, 3,...:
+# 
+
+# In[ ]:
+
+
+churn_cat.columns
+
+
+# In[ ]:
+
+
+#  Factorize the categorical churn columns
+# churn_cat_encode = Factorize(churn_cat)
+# churn_cat_encode.head()
+
+
+# # Encode the data (OneHotEncode)
+# The problem with the data above is that while the data are numeric, it give arbitrary low weights to categories encoded with 0 and higher weights to others
+# 
+# This will probably skew our analysis. For example, PaymentMethod has values 0, 1, 2.  Do we really mean to imply that PaymentMethod=0 has no weight, but PaymentMethod=2 has twice as much weight as PaymentMethod=1?
+# 
+# We use OneHotEncode here to make sure each value that was used is encoded with the value 1, while the value will be 0 if that feature was not used.
+# 
+# **Note:** We dont want to encode categories with many unique values in it such as customerID. 
+# 
+# We define a funvtion to handle doing the encoding for us
+# 
+# Now PaymentMethod will be split into brand new columns (one for each kind of numeric value) and each cell will have either 0 or 1, kind of like a check box, indicating the feature was present or not.
+# 
+# We also concatenate the previous numerica columns back in to have them available for analysis after standardization.
+
+# In[ ]:
+
+
+# list of column name I wish to OneHotEncode
+cols_OneHotEncode = [ 'gender', 'MaritalStatus', 'Dependents', 'PhoneService',
+       'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup',
+       'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies',
+       'Contract', 'PaperlessBilling', 'PaymentMethod', 'InternationalPlan',
+       'VoiceMailPlan']
+
+#['DeviceProtection','TechSupport','OnlineBackup','MultipleLines','gender','StreamingTV','Contract','StreamingMovies','PhoneService','PaperlessBilling','OnlineSecurity','Partner','Dependents','InternetService','PaymentMethod']
+# label is the column I ultimately want to predict aka Churn
+label = churn_cat['Churn']
+churn_encoded_numeric = MyOneHotEncode (churn_cat, [], cols_OneHotEncode)
+churn_numeric = pd.concat([churn_encoded_numeric, churn_num], axis=1)  # add numeric to main df
+churn_numeric.head()
+
+
+# # Standardize the Data
+
+# In[ ]:
+
+
+from sklearn import preprocessing
+#scale our data to zero center it
+scaler = preprocessing.StandardScaler().fit(churn_numeric)
+X_scaled = scaler.fit_transform(churn_numeric )   # same as (df-df.mean())/df.std(ddof=0)
+
+# create new data frame with all values scaled
+churn_scaled = pd.DataFrame(X_scaled)
+churn_scaled.columns = churn_numeric.columns
+churn_scaled.head()
+
+
+# # Correlation Plot
+# Plot shows which factors are correlated with which ohers and to what degree.
+# 
+# Here, red means highly correlated (as in correlated with Churn being bad therefor red), blue means negatively correlated, and white means no correlation.
+# **Notice** A customer with more contracts, more dependents, more tenure are less likley to churn in this example.
+
+# In[ ]:
+
+
+churn_numeric.shape
+
+from string import ascii_letters
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.set(style="white")
+
+# Generate a large random dataset
+d = churn_encoded_numeric
+
+# Compute the correlation matrix
+corr = np.corrcoef(d.T)
+
+# Generate a mask for the upper triangle
+mask = np.zeros_like(corr, dtype=bool)
+mask[np.triu_indices_from(mask)] = True
+
+# Set up the matplotlib figure
+f, ax = plt.subplots(figsize=(11, 9))
+
+# Generate a custom diverging colormap
+cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+# Draw the heatmap with the mask and correct aspect ratio
+sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
+            square=True, linewidths=.5, cbar_kws={"shrink": .5})
+# Perfectly anti-correlated columsn such as gender - contain redundant information = there are other yes/no columns that were encoded into two redundant columns by one hot encoding
+
+# <h1><center>Principal Component Analysis To Analyze Bahavior</center></h1>
+# 
+# ![image.png](attachment:image.png)
+# 
+# Principal component analysis (PCA) is a statistical procedure that uses an orthogonal transformation to convert a set of observations of possibly correlated variables into a set of values of linearly uncorrelated variables called principal components. The number of principal components is less than or equal to the number of original variables.
+# 
+# 
+# 
+
+# In[ ]:
+
+
+
+from sklearn.decomposition import PCA
+scaler = preprocessing.StandardScaler().fit(churn_numeric)
+X_scaled = preprocessing.scale(churn_encoded_numeric, with_mean=True, with_std=True )   # same as (df-df.mean())/df.std(ddof=0)
+# start w n_components principal components and see how much variance that gives me
+n_components = 20
+# create instance of PCA (constructor)
+pca = PCA(n_components=n_components)
+#pca = PCA(copy=True, iterated_power='auto', n_components=n_components, random_state=None, svd_solver='auto', tol=0.0, whiten=False) 
+pca.fit(X_scaled)
+X_scaled = pca.transform(X_scaled)  #get the actual principal components as vectors
+print(pca.explained_variance_ratio_) 
+
+
+# # Create copy the PCA data to a Dataframe and print the top few rows
+
+# In[ ]:
+
+
+Col_headings = ['P'+str(x) for x in range(n_components)]
+pcomps = pd.DataFrame(X_scaled) 
+pcomps.columns = Col_headings
+# concatenate the Churn column on the end so its easy to plot by Churn
+if 'Churn' not in pcomps.columns:
+    pcomps = pd.concat([pcomps, label], axis=1)
+pcomps.head()
+
+
+# # PCA Scree Plot
+# 
+# ### Overview
+# 
+# A Scree Plot is a simple line segment plot that shows the fraction of total variance in the data as explained or represented by each PC. The PCs are ordered, and by definition are therefore assigned a number label, by decreasing order of contribution to total variance. The PC with the largest fraction contribution is labeled with the label name from the preferences file. Such a plot when read left-to-right across the abscissa can often show a clear separation in fraction of total variance where the 'most important' components cease and the 'least important' components begin. The point of separation is often called the 'elbow'.  (In the PCA literature, the plot is called a 'Scree' Plot because it often looks like a 'scree' slope, where rocks have fallen down and accumulated on the side of a mountain.)
+
+# In[ ]:
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# bin is my x axis variable
+bin = []
+for i in range (n_components):
+    bin.append(i+1)
+# plot the cummulative variance against the index of PCA
+cum_var = np.cumsum(pca.explained_variance_ratio_)
+plt.plot(bin, cum_var)
+# plot the 95% threshold, so we can read off count of principal components that matter
+plt.plot(bin, [.95]*n_components, '--')
+plt.plot(bin, [.75]*n_components, '--')
+plt.plot(bin, [.67]*n_components, '--')
+#turn on grid to make graph reading easier
+plt.grid(True)
+plt.rcParams.update({'font.size': 22})
+plt.suptitle('PC Variance Exaplined (Scree Plot)')
+# control number of tick marks
+plt.xticks([i for i in range(0,n_components)])
+plt.show()
+
+
+# # Plot Principal Components: Scatter Matrix
+# 
+# Control the **colors** by the ** churn variable** or by the cluster they are in
+# 
+# Get a feel for clsutering beahvior
+# 
+# * **black = no churn**
+# 
+# * **red = churn**
+
+# In[ ]:
+
+
+pcomps
+
+
+# In[ ]:
+
+
+# from pandas.tools.plotting import scatter_matrix # For older versions of Pandas
+from pandas.plotting import scatter_matrix
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+# Figure 1
+# color the plot by the Churn variable
+label_num = MyOneHotEncode (churn_cat, [], ['Churn'])
+pcomps['Churn'] = label_num['ChurnYes']
+# attributes are the index of Principal components to plot against each other
+attributes = ['P{}'.format(i) for i in range(4)]
+#attributes = [item + 10 for item in attributes]   # mthod to add if you want to look at the least significant components
+churn_colors=['black', 'red']
+# make a scatter plot
+scatter_matrix(pcomps[attributes], alpha =.3, marker='o',c=pcomps.Churn.apply(lambda x:churn_colors[x]), figsize=[16,16])
+#scatter_matrix(pcomps[attributes], alpha =.3, marker='x',c=churn_cat_encode_new2.InternetService0.astype('int').apply(lambda x:churn_colors[x]), figsize=[16,16])
+plt.rcParams.update({'font.size': 22})
+plt.suptitle("Figure 1: Scatter Matrix of PC's")
+plt.show()
+
+
+# Are the dots completely random?
+# 
+# Is there some patterning visible?
+# 
+# Are the Churn people (red) concentrated in certain places or randomly?
+
+# ## Method to Drill Down to Specific Portion of the Data
+# We are keying off the graph above and noticing that P0 < 0 covers a major portionof the clusters
+# 
+# So what makes this part of the tick?
+
+# In[ ]:
+
+
+churn_encoded_numeric[pcomps['P0']>0].describe()
+
+
+# 
+# # Find KMeans Clusters in the PCA Data
+# 
+# Lets use an algorithm to groups clusters it finds together. We will label our data with the clusters we find so we can sort and filter as needed
+# 
+# Here we use kmeans as a quick and dirty clustering method to get a better feel for customer behavior
+# 
+# Ideally I would like to identify a cluster for each natural cluster of customer bevaior
+# 
+# Armed with this I may decide to sgement out interesting populations for prediction, or I may decide that one big prediction against all the data is best
+# 
+# We will augment the rows of the dataset with the cluster information so that it can be used in our models
+
+# In[ ]:
+
+
+from sklearn.cluster import KMeans
+import numpy as np
+
+#sweep number of clusters to try, plot result
+def my_kmeans(pcomps, n_clusters):
+    cols = ['P{}'.format(i) for i in range(4)]
+    x = pcomps[cols].to_numpy()
+    kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(x)
+    kmeans.labels_
+    X_scaled.shape
+    #kmeans.cluster_centers_
+    txt = 'kmeans' + str(n_clusters)
+    pcomps[txt]=kmeans.labels_
+    return pcomps
+
+pcomps = my_kmeans(pcomps,2)
+pcomps = my_kmeans(pcomps,3)
+pcomps = my_kmeans(pcomps,4)
+pcomps = my_kmeans(pcomps,5)
+
+
+plt.hist( pcomps['kmeans2'], alpha = .3)
+plt.title("Compare plot of number of clusters estimated")
+plt.xlabel("Cluster")
+plt.ylabel("Frequency")
+
+plt.hist( pcomps['kmeans3'], alpha = .3)
+plt.xlabel("Cluster")
+plt.ylabel("Frequency")
+
+plt.hist( pcomps['kmeans4'], alpha = .3)
+plt.xlabel("Cluster")
+plt.ylabel("Frequency")
+
+plt.show()
+
+
+# In[ ]:
+
+
+churn_scaled = pd.concat([churn_scaled, pcomps['kmeans2']], axis=1)
+churn_scaled = pd.concat([churn_scaled, pcomps['kmeans3']], axis=1)
+churn_scaled = pd.concat([churn_scaled, pcomps['kmeans4']], axis=1)
+churn_scaled = pd.concat([churn_scaled, pcomps['kmeans5']], axis=1)
+churn_encoded_numeric = pd.concat([churn_encoded_numeric, pcomps['kmeans2']], axis=1)
+churn_encoded_numeric = pd.concat([churn_encoded_numeric, pcomps['kmeans3']], axis=1)
+churn_encoded_numeric = pd.concat([churn_encoded_numeric, pcomps['kmeans4']], axis=1)
+churn_encoded_numeric = pd.concat([churn_encoded_numeric, pcomps['kmeans5']], axis=1)
+
+
+# # Examine Specific Cluster Like This
+
+# In[ ]:
+
+
+churn_encoded_numeric[pcomps['kmeans5']==1].head()
+
+
+# # Experiment with 3D plot: Red = Churn
+# This may give a better feel for the clustering behavior
+# 
+# Control the colors as you wish, here we color Churners red
+# **red = Churn**
+# 
+# The plot should be interactive so you can rotate it a see where churners live
+
+# In[ ]:
+
+
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+get_ipython().run_line_magic('matplotlib', 'inline')
+
+fig = plt.figure(figsize=[10,10])
+ax = fig.add_subplot(111, projection='3d')
+colors=['black','red']
+#df = pcomps[pcomps['kmeans3']==2]
+df = pcomps
+churn_colors=['red' , 'black', 'black', 'black', 'black', 'black', 'black', 'black', 'black', 'black', 'black']
+ax.scatter(df['P5'], df['P0'], df['P1'],c=df['kmeans5'].apply(lambda x:churn_colors[x]), alpha = .3 )
+
+ax.set_xlabel('Princ 1')
+ax.set_ylabel('Princ 0')
+ax.set_zlabel('Princ 5')
+
+plt.show()
+
+
+# 
+# 
+# 
+# # One Approach to Outliers (DBSCAN Visualization)
+# 
+# Control the **colors** by the **cluster** they are in
+# 
+# Get a feel for clsutering behavior
+# 
+# We added the cluster number to the dataframe so we can drill down as needed to examine a cluster in more detail.
+# 
+# When we create the model we might decide to take advantage of our feature engineering here or we might decide to let the ML/DL algorithm use all the data to make predictions.
+# 
+# **NOTE:** Be careful with relying on the cluster number. These were established by random selection. So each time we run we may get a different cluster number for what humans percieve as a clsuter or the k-means may find different clusters entirely. Specifying a random seed or using a different cluster methods, such SOM may make this part more rubust.
+# 
+# It would be great if we coudl isolate the different communities from each other and see if this effects the chrun prediction
+
+# In[ ]:
+
+
+### import numpy as np
+from sklearn.cluster import DBSCAN
+from sklearn import metrics
+from sklearn.preprocessing import StandardScaler
+# X = pcomps.iloc[[1, 3, 5], [1, 3]]
+X = pcomps
+np.random.seed(42)
+
+# try eps of 6.5, then observe a small number of points are classified as -1 (Outliers)
+pcomps2, labels, n_clusters = my_dbscan(X, 6.3 )  # call my_dbscan with df=X, eps = 4
+#dbscan finds 2 clusters account for most points with min cluster distance 6.3
+
+dbsPCA_hist = pcomps2.dbsPCA
+print('Outliers: {}:   Estimated number of clusters: {}'.format(  dbsPCA_hist.tolist().count(-1),  n_clusters) )
+plt.hist( dbsPCA_hist)
+plt.title("dbsPCA_hist")
+plt.xlabel("Cluster")
+plt.ylabel("Frequency")
+#plt.axis([-1,n_clusters,0,7200])
+plt.show()
+
+
+# In[ ]:
+
+
+churn_encoded_numeric = pd.concat([churn_encoded_numeric, pcomps['dbsPCA']], axis=1)
+
+
+# In[ ]:
+
+
+churn_encoded_numeric.head()
+
+
+# In[ ]:
+
+
+# Figure 2
+# plot each cluster a different color so we can see what cluster number is associated with each blob
+df2 = pcomps
+#df2 = pcomps[pcomps['Churn'] == 1]
+# make a scatter plot
+#attributes = [0, 1, 2]
+#colors=['blue','green','yellow']
+
+attributes = ['P{}'.format(i) for i in range(4)]
+
+colors=['black', 'violet','green','blue', 'yellow', 'red', 'gray', 'white', 'orange']
+scatter_matrix(df2[attributes],figsize=[16,16],marker='o', alpha=.3, c=df2['dbsPCA'].apply(lambda x:colors[x+1]))
+plt.rcParams.update({'font.size': 22})
+plt.suptitle("Outliers in black")
+plt.show()
+
+
+# In[ ]:
+
+
+print('Outliers: {} '.format(  dbsPCA_hist.tolist().count(-1)) )
+churn_encoded_numeric[churn_encoded_numeric['dbsPCA']<0].describe()
+
+
+# # Examine Outliers Statistics Like This
+# 
+# Compare leading differnces bewteen Outliers and general population
+# 
+# Notice that the ratio of the histogram values for Outliers versus general population are different - pretty dramtically
+
+# In[ ]:
+
+
+#churn_encoded_numeric[pcomps['dbsPCA']<0].head()
+if 'Churn' not in churn_encoded_numeric.columns:
+    churn_numeric = pd.concat([churn_encoded_numeric, label], axis=1)  # add numeric to main df
+churn_numeric[pcomps['dbsPCA']<0]
+
+TotalC = churn_numeric[pcomps['dbsPCA']<0]  # outliers in DBSCAN have value -1
+TotalC.hist(column = 'ContractOne year')
+
+plt.title('ContractOne year: Histogram for Outliers')
+churn_numeric.hist(column = 'ContractOne year')
+
+
+# In[ ]:
+
+
+churn_encoded_numeric[pcomps['dbsPCA']<0].describe()
+
+
+# In[ ]:
+
+
+churn_encoded_numeric.describe()
+
+
+# # Modeling
+
+# ## Split Data - Training/Test
+# 
+# Determine if patching as default makes sense in the given dataset scenario.
+# 
+# **Exercise:**
+# run the train_test_split both patched and unpatched and observe any speed differences for this particualr dataset
+
+# In[ ]:
+
+
+# to make this notebook's output identical at every run
+np.random.seed(42)
+import time
+
+from sklearn.model_selection import train_test_split
+
+if 'Churn' in churn_numeric.columns:
+    churn_numeric =  churn_numeric.drop('Churn', 1)
+
+t1 = time.time()
+train_set, test_set, y_train, y_test = train_test_split(churn_numeric, label_num['ChurnYes'], test_size=0.2)
+t2 = time.time()
+print('Elapsed: ', t2 - t1)
+
+
+# # First Model - Decision Tree
+
+# In[ ]:
+
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+train_set, test_set, y_train, y_test
+clf = DecisionTreeClassifier()
+clf.fit(train_set, y_train)
+predicted = clf.predict(test_set)
+print ("accuracy ", accuracy_score(y_test, predicted ) )
+
+
+# **Excercise:**
+# 
+# Fill in the table below to report the times for patched and unpatched:
+# 
+# Algorithm |Patched Time |UnPatched Time
+# -----|-----|----- 
+# PCA|.....|.....
+# Kmeans|.....|.....
+# DBSCAN|.....|.....
+# Train_test_split|.....|.....
+# Decision Tree|.....|.....
+# SVC|.....|.....
+# Random Forest|.....|.....
+
+# In[ ]:
+
+
+print("All Done")
+

@@ -4,3 +4,4 @@ seaborn
 openpyxl
 Pillow
 shapely
+plotly
