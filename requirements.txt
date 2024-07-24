@@ -1,10 +1,10 @@
 ###### Requirements without Version Specifiers ######
-tqdm==4.66.2
+tqdm==4.66.3
 seaborn==0.13.2
 numpy==1.26.4
 scipy==1.10.1
-scikit-learn==1.4.0
-Pillow==10.2.0
+scikit-learn==1.5.0
+Pillow==10.3.0
 plotly==5.23.0
 xgboost==2.0.3
 nbconvert==7.16.2
