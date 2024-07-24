@@ -24,6 +24,8 @@ From a Jupyterhub terminal instance:
 
 ## Currently Known Issues:
 
+There are issues installing the dpctl library from either conda or pip. This impacts the GPU exercises for scikit-learn. You will have to pass on these exercises until the issue is resolved. We will update this README when it is confirmed the problem has been fixed
+
 ### Known issue: 
 
 ## Purpose
