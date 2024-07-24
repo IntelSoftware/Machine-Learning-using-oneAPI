@@ -1,4 +1,0 @@
-###### Requirements without Version Specifiers ######
-tqdm
-seaborn
-openpyxl
