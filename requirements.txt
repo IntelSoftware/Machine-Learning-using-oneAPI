@@ -5,7 +5,7 @@ scipy==1.14.0
 scikit-learn==1.5.1
 Pillow==10.4.0
 plotly==5.23.0
-tqdm==4.66.3
+tqdm==4.66.5
 seaborn==0.13.2
 xgboost==2.1.0
 nbconvert==7.16.4
